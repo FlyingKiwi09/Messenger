@@ -22,7 +22,7 @@ public class ServicedServer extends Service <String>{
 			@Override
 			public void handle(WorkerStateEvent arg0) {
 				
-				System.out.println("This is setOnSucceeded " + server);
+				System.out.println("This is setOnSucceeded " + arg0);
 				
 			}
 		});
@@ -43,10 +43,11 @@ public class ServicedServer extends Service <String>{
 				
 				System.out.println("Creating task....");
 				server = new Server(port, ipAddressList);
+				server.start();
 				
 				System.out.println("Task Created .....");
 				
-				return "nothing"; // returns a variable when the work is completed
+				return "something"; // returns a variable when the work is completed
 			}
 		};
 	}

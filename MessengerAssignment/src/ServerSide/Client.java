@@ -1,12 +1,16 @@
 package ServerSide;
 
-public class Client {
+import java.io.Serializable;
 
+public class Client implements Serializable {
+
+	private String userName;
 	private String firstName;
 	private String lastName;
 	private String ipAddress;
 	
-	public Client(String firstName, String lastName, String ipAddress) {
+	public Client(String userName, String firstName, String lastName, String ipAddress) {
+		this.userName = userName;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.ipAddress = ipAddress;

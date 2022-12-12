@@ -5,58 +5,35 @@ import java.net.Socket;
 
 import javafx.collections.ObservableList;
 
-public class Server {
+public class Server extends Thread{
 
 	ServerSocket serverSocket;
 	ObservableList<Client> ipAddressList;
+	private int port;
 	
 	
 	public Server (int port, ObservableList<Client> ipAddressList) throws IOException {
 		this.ipAddressList = ipAddressList;
-		setUpServer(port);
-	}
-	
-	private void setUpServer(int port) throws IOException {
-//	 	create a serverSocket to listen to the specified port
-    	serverSocket = new ServerSocket(port);
+		this.port = port;
+		serverSocket = new ServerSocket(port);
     	System.out.println("Server started on: " + port);
     	
-    	// accept connections from clients
-    	try {
-    		Thread.sleep(1000);
-			System.out.println("Waiting on client to connect!");
-			Socket clientSocket = serverSocket.accept();
-			System.out.println("Client socket accepted");
-//    		creates and starts a new thread from the ServerThread class
-			new ServerThread(clientSocket, ipAddressList).start();
-    			
-    	}  catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		finally {
-			try {
-				serverSocket.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
 	}
 	
-	public void run() throws IOException, InterruptedException {
+
+	
+	public void run() {
 		System.out.println("In Server run");
 		// accept connections from clients
     	try {
-    		Thread.sleep(1000);
-			System.out.println("Waiting on client to connect!");
-			Socket clientSocket = serverSocket.accept();
-			System.out.println("Client connected, sending hello world...");
-//    		creates and starts a new thread from the ServerThread class
-			new ServerThread(clientSocket, ipAddressList).start();
+    		while(true) {
+	    		Thread.sleep(1000);
+				System.out.println("Waiting on client to connect!");
+				Socket clientSocket = serverSocket.accept();
+				System.out.println("Client connected, sending hello world...");
+	//    		creates and starts a new thread from the ServerThread class
+				new ServerThread(clientSocket, ipAddressList).start();
+    		}
     			
     	}  catch (InterruptedException e) {
 			// TODO Auto-generated catch block
