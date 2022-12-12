@@ -2,14 +2,14 @@ package ServerSide;
 
 import java.io.Serializable;
 
-public class Client implements Serializable {
+public class ClientData implements Serializable {
 
 	private String userName;
 	private String firstName;
 	private String lastName;
 	private String ipAddress;
 	
-	public Client(String userName, String firstName, String lastName, String ipAddress) {
+	public ClientData(String userName, String firstName, String lastName, String ipAddress) {
 		this.userName = userName;
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -38,6 +38,16 @@ public class Client implements Serializable {
 
 	public void setIpAddress(String ipAddress) {
 		this.ipAddress = ipAddress;
+	}
+	
+	
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 
 	@Override

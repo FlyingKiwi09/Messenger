@@ -8,11 +8,11 @@ import javafx.collections.ObservableList;
 public class Server extends Thread{
 
 	ServerSocket serverSocket;
-	ObservableList<Client> ipAddressList;
+	ObservableList<ClientData> ipAddressList;
 	private int port;
 	
 	
-	public Server (int port, ObservableList<Client> ipAddressList) throws IOException {
+	public Server (int port, ObservableList<ClientData> ipAddressList) throws IOException {
 		this.ipAddressList = ipAddressList;
 		this.port = port;
 		serverSocket = new ServerSocket(port);

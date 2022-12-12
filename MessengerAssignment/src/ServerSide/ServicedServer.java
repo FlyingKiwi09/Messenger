@@ -12,10 +12,10 @@ import javafx.event.EventHandler;
 public class ServicedServer extends Service <String>{
 	
 	int port;
-	ObservableList<Client> ipAddressList;
+	ObservableList<ClientData> ipAddressList;
 	private Server server;
 
-	public ServicedServer(int port, ObservableList<Client> ipAddressList) {
+	public ServicedServer(int port, ObservableList<ClientData> ipAddressList) {
 		
 //		runs when the service is successfully terminated
 		setOnSucceeded(new EventHandler<WorkerStateEvent>() {
@@ -37,7 +37,7 @@ public class ServicedServer extends Service <String>{
 
 		return new Task <String>()
 		{
-			@Override
+			 @Override
 			protected String call() throws Exception {
 				//Thread.sleep(10000);
 				

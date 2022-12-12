@@ -17,9 +17,9 @@ import javafx.collections.ObservableList;
 public class ServerThread extends Thread {
 	
 	Socket clientSocket;
-	ObservableList<Client> ipAddressList;
+	ObservableList<ClientData> ipAddressList;
 
-	public ServerThread(Socket clientSocket, ObservableList<Client> ipAddressList) {
+	public ServerThread(Socket clientSocket, ObservableList<ClientData> ipAddressList) {
 		this.clientSocket = clientSocket;
 		this.ipAddressList = ipAddressList;
 	}
@@ -91,14 +91,14 @@ public class ServerThread extends Thread {
 					String ipAddress = input.readLine();
 					
 //					create a new client object with the client details
-					Client client = new Client("annon", "annon", "annon", ipAddress);
+					ClientData client = new ClientData("annon", "annon", "annon", ipAddress);
 					System.out.println(client);
 					ipAddressList.add(client);
 				} else if (reply.equals("getContacts")) {	
 					
 //					send contacts
 					System.out.println("Sending contacts");
-					for (Client client: ipAddressList) {
+					for (ClientData client: ipAddressList) {
 						out.println(client.getFirstName());
 						System.out.println("Sending " + client.getFirstName());
 					}
@@ -137,15 +137,17 @@ public class ServerThread extends Thread {
 						if (rs.next()) {
 							System.out.println(rs.getString("username"));
 							
-							out.print("loginSuccess");
+							out.println("loginSuccess");
 							// write object to file
 							
 							ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
-							Client user = new Client(rs.getString("username"), rs.getString("firstname"), rs.getString("lastname"), null); 
+							ClientData user = new ClientData(rs.getString("username"), rs.getString("firstname"), rs.getString("lastname"), null); 
+							System.out.println(user.getUserName());
 							oos.writeObject(user);
 							
 						} else {
 							System.out.print("Login failed");
+							out.println("loginFailed");
 						}
 						
 					} catch (Exception e) {
@@ -154,7 +156,6 @@ public class ServerThread extends Thread {
 					}
 					
 				}else {
-				
 					System.out.println("Something went wrong in ServerThread.run()");
 				}
 			

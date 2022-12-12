@@ -23,8 +23,8 @@ import javafx.scene.layout.VBox;
 public class ServerGUI extends Application {
 	
 //	list and table to view the connected clients
-	private ObservableList<Client> ipAddressList = FXCollections.observableArrayList();
-	private TableView<Client> clientTable = new TableView<Client>();
+	private ObservableList<ClientData> ipAddressList = FXCollections.observableArrayList();
+	private TableView<ClientData> clientTable = new TableView<ClientData>();
 	
 //	ServicedServer and Server 
 	private ServicedServer servicedServer;
@@ -54,14 +54,14 @@ public class ServerGUI extends Application {
 			//table
 			clientTable.setEditable(true);
 			
-			TableColumn<Client, String> firstNameCol = new TableColumn("First Name");
-			firstNameCol.setCellValueFactory(new PropertyValueFactory<Client, String>("firstName"));
+			TableColumn<ClientData, String> firstNameCol = new TableColumn("First Name");
+			firstNameCol.setCellValueFactory(new PropertyValueFactory<ClientData, String>("firstName"));
 
-			TableColumn<Client, String> lastNameCol = new TableColumn("Last Name");
-			lastNameCol.setCellValueFactory(new PropertyValueFactory<Client, String>("lastName"));
+			TableColumn<ClientData, String> lastNameCol = new TableColumn("Last Name");
+			lastNameCol.setCellValueFactory(new PropertyValueFactory<ClientData, String>("lastName"));
 			
-			TableColumn<Client, String> ipAddressCol = new TableColumn("IP Address");
-			ipAddressCol.setCellValueFactory(new PropertyValueFactory<Client, String>("ipAddress"));
+			TableColumn<ClientData, String> ipAddressCol = new TableColumn("IP Address");
+			ipAddressCol.setCellValueFactory(new PropertyValueFactory<ClientData, String>("ipAddress"));
 			
 			clientTable.setItems(ipAddressList);
 			clientTable.getColumns().addAll(firstNameCol, lastNameCol, ipAddressCol);

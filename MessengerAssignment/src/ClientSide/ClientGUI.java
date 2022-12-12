@@ -8,7 +8,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import ServerSide.Client;
+import ServerSide.ClientData;
+import ServerSide.ServicedServer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,6 +17,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -26,9 +28,6 @@ public class ClientGUI extends Application {
 	
 	private String serverAddress = "localhost";
 	private int port = 6677;
-	private String firstName = "Bob";
-	private String lastName = "Hook";
-	private String myipAddress = "ipAddress";
 	private static Socket clientSocket;
 	final private static ObservableList<String> contacts = FXCollections.observableArrayList();
 	static TextField messagesTF;
@@ -38,7 +37,7 @@ public class ClientGUI extends Application {
 	private BufferedReader input;
 	private ObjectInputStream ois;
 	 
-	
+	final private static Text feedback = new Text();
 	
 	
 //	UI elements
@@ -50,10 +49,6 @@ public class ClientGUI extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		
-		
-	
-		 
 		 
 		this.primaryStage = primaryStage;
 		
@@ -63,21 +58,9 @@ public class ClientGUI extends Application {
 		messagesTF = new TextField();
 		
 		
-		//recipient 
-		Label recipientLabel = new Label("Select a recipient: ");
-		ComboBox<String> recipientListCB = new ComboBox<String>(contacts);	
-		HBox recipientBox = new HBox();
-		
 
-//	 messages	
-		HBox newMessageHB = new HBox();
-		TextField newMessageTF = new TextField();
-		Button sendButton = new Button("Send");
 
-//		put objects together
-		recipientBox.getChildren().addAll(recipientLabel, recipientListCB);
-		newMessageHB.getChildren().addAll(newMessageTF, sendButton);
-		root.getChildren().addAll(connectButton, messagesTF, recipientBox, newMessageHB);
+		root.getChildren().addAll(connectButton, messagesTF);
 		
 		
 //		listeners for buttons
@@ -89,11 +72,7 @@ public class ClientGUI extends Application {
 			}
 		});
 		
-		sendButton.setOnAction(event ->{
-			if (clientSocket != null) {
-//				sent the message
-			}
-		});
+
 		
 		// scene set up
 		primaryStage.setScene(new Scene(root, 300, 400));
@@ -123,12 +102,6 @@ public class ClientGUI extends Application {
 		
 		try {
 			if(reply.equals("connectionSuccess")) {
-				out.println(firstName);
-				System.out.println(firstName);
-				out.println(lastName);
-				System.out.println(lastName);
-				out.println(myipAddress);
-				System.out.println(myipAddress);
 				
 				showLoginScreen();
 //				getContacts();				
@@ -169,7 +142,6 @@ public class ClientGUI extends Application {
 	
 	private void showLoginScreen() {
 		
-		
 		VBox rootLogin = new VBox();
 		Text loginHeading = new Text("Login");
 		
@@ -183,20 +155,24 @@ public class ClientGUI extends Application {
 		
 		Button loginButton = new Button("Login");
 		
-		Text feedback = new Text();
-		
+//		Text feedback = new Text();
 		usernameHB.getChildren().addAll(usernameLabel, usernameTF);
 		passwordHB.getChildren().addAll(passwordLabel, passwordTF);
 		
 		
 		loginButton.setOnAction(event ->{
-			Client user = login(usernameTF.getText(), passwordTF.getText());
 			
-			if (!(user).equals(null)) {
+//			sent the username and password to the login method. 
+//			login() returns the user if one is found in the database or null if no user is found
+			ClientData user = login(usernameTF.getText(), passwordTF.getText());
+			
+			if (user != null) {
 //				show logged in screen
 				feedback.setText("Success");
+				showMessagesScreen(user);
 			} else {
-				feedback.setText("Failed");
+//				display failed login message
+				feedback.setText("Error: username or password are incorrect.");
 			}
 		});
 		
@@ -205,20 +181,26 @@ public class ClientGUI extends Application {
 		this.primaryStage.setScene(loginScene);
 	}
 	
-	public Client login(String username, String password) {
+//	login sends the username and password to the server for verification 
+//	if the credentials are verified, the server sends back a Client object with the users details.
+//	the method returns this client or null if the details can't be verified
+	private ClientData login(String username, String password) {
 		out.println("login");
 		out.println(username);
 		out.println(password);
 		String reply;
+
 		try {
 			reply = input.readLine();
+
 			if (reply.equals("loginSuccess")) {
 				System.out.println("Reply: " + reply);
 				
 //				get client object and return it if the login is successful
 				try {
 					ois = new ObjectInputStream (clientSocket.getInputStream());
-					Client me = (Client) ois.readObject();
+					ClientData me = (ClientData) ois.readObject();
+					ois.close();
 					return me;
 					
 				} catch (ClassNotFoundException e) {
@@ -230,7 +212,7 @@ public class ClientGUI extends Application {
 				
 			} else {
 				System.out.println("Reply: " + reply);
-				
+				return null;
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -239,6 +221,52 @@ public class ClientGUI extends Application {
 		
 		return null;
 	
+	}
+	
+	private void showMessagesScreen(ClientData user) {
+		VBox rootMessages = new VBox();
+		Text welcome = new Text("Welcome " + user.getUserName());
+		
+//recipient 
+		Label recipientLabel = new Label("Select a recipient: ");
+		
+		ComboBox<String> recipientListCB = new ComboBox<String>(contacts);	
+		HBox recipientBox = new HBox();
+// message
+		TextArea messagesTA = new TextArea();
+		messagesTA.setPrefHeight(200);
+		messagesTA.setPrefWidth(200);
+		messagesTA.setEditable(false);
+
+//	 new message	
+		HBox newMessageHB = new HBox();
+		TextField newMessageTF = new TextField();
+		Button sendButton = new Button("Send");
+		
+		Button logoutButton = new Button("Logout");
+		
+//		put objects together
+		recipientBox.getChildren().addAll(recipientLabel, recipientListCB);
+		newMessageHB.getChildren().addAll(newMessageTF, sendButton);
+		
+		sendButton.setOnAction(event ->{
+			if (clientSocket != null) {
+//				send the message
+			}
+		});
+		
+//		create serviced client so separte thread can be made with javafx
+		ServicedClient servicedClient = new ServicedClient(contacts, clientSocket);
+		
+		
+//		servicedServer = new ServicedServer(portNum, ipAddressList);
+//		servicedServer.start();
+//		server = servicedServer.getServer();
+		
+		rootMessages.getChildren().addAll(welcome, recipientLabel, messagesTA, newMessageHB, logoutButton);
+		Scene messagesScene = new Scene(rootMessages, 400, 400);
+		this.primaryStage.setScene(messagesScene);
+
 	}
 
 	public static void main(String[] args) {
