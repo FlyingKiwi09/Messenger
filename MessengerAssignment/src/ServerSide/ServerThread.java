@@ -116,7 +116,14 @@ public class ServerThread extends Thread {
 						e.printStackTrace();
 					}
 					
-				}else {
+				}else if (reply.equals("loggingOut")){
+					String logoutUser = input.readLine();
+					
+					server.logoutClient(logoutUser);
+					
+					
+					
+				}else{
 					System.out.println("reply:" + reply);
 					System.out.println("Something went wrong in ServerThread.run()");
 					

@@ -250,6 +250,15 @@ public class ClientGUI extends Application {
 			}
 		});
 		
+		logoutButton.setOnAction(event ->{
+			// tell the server you're logging out so that it can remove the user from the list of logged in users.
+			out.print("loggingOut");
+			out.print(user);
+			
+			showLoginScreen();
+			
+		});
+		
 //		create serviced client so separate thread can be made with javafx
 		System.out.println("Creating servicedClient");
 		ServicedClient servicedClient = new ServicedClient(contacts, clientSocket);

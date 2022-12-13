@@ -56,7 +56,6 @@ public class Server extends Thread{
 		clientSockets.put(client, clientThread);
 
 //		let all the other clients know that a new client has logged in
-		
 		clientSockets.forEach((key, value) -> {
 			try {
 				PrintWriter out = new PrintWriter(value.getClientSocket().getOutputStream (), true);
@@ -72,9 +71,36 @@ public class Server extends Thread{
 		});
 	}
 	
+	public void logoutClient(String user) {
+		clientSockets.remove(user);
+		
+		
+//		let all the other clients know that a client has left
+		clientSockets.forEach((key, value) -> {
+			try {
+				PrintWriter out = new PrintWriter(value.getClientSocket().getOutputStream (), true);
+				out.println("removeContact");
+				out.println("user");
+				
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		});
+	}
+	
 	public void stopServer() throws IOException {
 		serverSocket.close();
 		System.out.println("Program finished! - closed from stopServer");
 	}
+
+	public HashMap<ClientData, ServerThread> getClientSockets() {
+		return clientSockets;
+	}
+
+
+	
 
 }
