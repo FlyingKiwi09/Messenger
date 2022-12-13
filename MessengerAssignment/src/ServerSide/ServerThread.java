@@ -61,8 +61,8 @@ public class ServerThread extends Thread {
 //					send contacts
 					System.out.println("Sending contacts");
 					for (ClientData client: ipAddressList) {
-						out.println(client.getFirstName());
-						System.out.println("Sending " + client.getFirstName());
+						out.println(client.getUserName());
+						System.out.println("Sending " + client.getUserName());
 					}
 					System.out.println("ended");
 					out.println("end");

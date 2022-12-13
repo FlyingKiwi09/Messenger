@@ -121,15 +121,15 @@ public class ClientGUI extends Application {
 	private void getContacts() {
 		try {
 	//		write to the server
-			 
-			
 			out.println("getContacts");
 			
 	//		read ouput from server
 			String contact = input.readLine();
 			
 			while (!(contact.equals("end"))) {
-				contacts.add(contact);
+				if (!(contacts.contains(contact))) {
+					contacts.add(contact);
+				}
 				contact = input.readLine();
 			}
 			
@@ -225,7 +225,7 @@ public class ClientGUI extends Application {
 //recipient 
 		Label recipientLabel = new Label("Select a recipient: ");
 		final ComboBox<String> recipientListCB = new ComboBox<String>(contacts);
-		contacts.add("select a recepient");
+		getContacts();
 		HBox recipientBox = new HBox();
 // message
 		TextArea messagesTA = new TextArea();
@@ -250,7 +250,7 @@ public class ClientGUI extends Application {
 			}
 		});
 		
-//		create serviced client so separte thread can be made with javafx
+//		create serviced client so separate thread can be made with javafx
 		System.out.println("Creating servicedClient");
 		ServicedClient servicedClient = new ServicedClient(contacts, clientSocket);
 		servicedClient.start();
@@ -266,5 +266,6 @@ public class ClientGUI extends Application {
 		launch(args);
 
 	}
+
 
 }

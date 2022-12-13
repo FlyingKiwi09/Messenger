@@ -34,7 +34,10 @@ public class Client extends Thread {
 							System.out.println("Message Recieved:" + message);
 							if (message.equals("addContact")) {
 								String contactUsername = input.readLine();
-								contacts.add(contactUsername);
+								if (!(contacts.contains(contactUsername))) {
+									contacts.add(contactUsername);
+								}
+
 							} else if (message.equals("removeContact")) {
 								String contactUsername = input.readLine();
 								contacts.remove(contactUsername);
