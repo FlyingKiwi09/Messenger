@@ -30,7 +30,7 @@ public class ServicedClient extends Service<String> {
 				System.out.println("Creating Task in ServicedClient");
 				Client client = new Client(contacts, clientSocket);
 				client.start();
-				return null;
+				return "nothing";
 			}
 	
 		};

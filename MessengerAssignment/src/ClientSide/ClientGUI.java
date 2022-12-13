@@ -2,6 +2,7 @@ package ClientSide;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
@@ -29,7 +30,7 @@ public class ClientGUI extends Application {
 	private String serverAddress = "localhost";
 	private int port = 6677;
 	private static Socket clientSocket;
-	final private static ObservableList<String> contacts = FXCollections.observableArrayList();
+	private static ObservableList<String> contacts = FXCollections.observableArrayList();
 	static TextField messagesTF;
 	
 //	reader and writers
@@ -56,9 +57,6 @@ public class ClientGUI extends Application {
 		VBox root = new VBox();
 		Button connectButton = new Button("Connect");		
 		messagesTF = new TextField();
-		
-		
-
 
 		root.getChildren().addAll(connectButton, messagesTF);
 		
@@ -88,11 +86,14 @@ public class ClientGUI extends Application {
 //		connect to the server
 		clientSocket = new Socket(serverAddress, port);
 		out = new PrintWriter(clientSocket.getOutputStream(), true);
-		input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+		InputStream in = clientSocket.getInputStream();
+		input = new BufferedReader(new InputStreamReader(in));
 	
 		
 //		write to the server
 		out.println("ClientConnected");
+		
+		out.println("ipAddress");
 		
 //		read ouput from server
 		BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -150,7 +151,7 @@ public class ClientGUI extends Application {
 		TextField usernameTF = new TextField();
 		
 		HBox passwordHB = new HBox();
-		Label passwordLabel = new Label("Username: ");
+		Label passwordLabel = new Label("Password: ");
 		TextField passwordTF = new TextField();
 		
 		Button loginButton = new Button("Login");
@@ -161,10 +162,10 @@ public class ClientGUI extends Application {
 		
 		
 		loginButton.setOnAction(event ->{
-			
+			System.out.println("login button pressed");
 //			sent the username and password to the login method. 
 //			login() returns the user if one is found in the database or null if no user is found
-			ClientData user = login(usernameTF.getText(), passwordTF.getText());
+			String user = login(usernameTF.getText(), passwordTF.getText());
 			
 			if (user != null) {
 //				show logged in screen
@@ -184,8 +185,10 @@ public class ClientGUI extends Application {
 //	login sends the username and password to the server for verification 
 //	if the credentials are verified, the server sends back a Client object with the users details.
 //	the method returns this client or null if the details can't be verified
-	private ClientData login(String username, String password) {
+	private String login(String username, String password) {
+		System.out.println("login method called");
 		out.println("login");
+		
 		out.println(username);
 		out.println(password);
 		String reply;
@@ -196,17 +199,9 @@ public class ClientGUI extends Application {
 			if (reply.equals("loginSuccess")) {
 				System.out.println("Reply: " + reply);
 				
-//				get client object and return it if the login is successful
-				try {
-					ois = new ObjectInputStream (clientSocket.getInputStream());
-					ClientData me = (ClientData) ois.readObject();
-					ois.close();
-					return me;
-					
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				System.out.println("Returning client object");
+				String myName = input.readLine();
+				return myName;
 				
 //				return client object
 				
@@ -223,14 +218,14 @@ public class ClientGUI extends Application {
 	
 	}
 	
-	private void showMessagesScreen(ClientData user) {
+	private void showMessagesScreen(String user) {
 		VBox rootMessages = new VBox();
-		Text welcome = new Text("Welcome " + user.getUserName());
+		Text welcome = new Text("Welcome " + user);
 		
 //recipient 
 		Label recipientLabel = new Label("Select a recipient: ");
-		
-		ComboBox<String> recipientListCB = new ComboBox<String>(contacts);	
+		final ComboBox<String> recipientListCB = new ComboBox<String>(contacts);
+		contacts.add("select a recepient");
 		HBox recipientBox = new HBox();
 // message
 		TextArea messagesTA = new TextArea();
@@ -256,14 +251,11 @@ public class ClientGUI extends Application {
 		});
 		
 //		create serviced client so separte thread can be made with javafx
+		System.out.println("Creating servicedClient");
 		ServicedClient servicedClient = new ServicedClient(contacts, clientSocket);
+		servicedClient.start();
 		
-		
-//		servicedServer = new ServicedServer(portNum, ipAddressList);
-//		servicedServer.start();
-//		server = servicedServer.getServer();
-		
-		rootMessages.getChildren().addAll(welcome, recipientLabel, messagesTA, newMessageHB, logoutButton);
+		rootMessages.getChildren().addAll(welcome, recipientBox, messagesTA, newMessageHB, logoutButton);
 		Scene messagesScene = new Scene(rootMessages, 400, 400);
 		this.primaryStage.setScene(messagesScene);
 

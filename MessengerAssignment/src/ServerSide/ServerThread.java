@@ -16,58 +16,22 @@ import javafx.collections.ObservableList;
 
 public class ServerThread extends Thread {
 	
-	Socket clientSocket;
-	ObservableList<ClientData> ipAddressList;
+	private Socket clientSocket;
+	private ObservableList<ClientData> ipAddressList;
+	private ClientData client;
+	private Server server;
 
-	public ServerThread(Socket clientSocket, ObservableList<ClientData> ipAddressList) {
+	public ServerThread(Socket clientSocket, ObservableList<ClientData> ipAddressList, Server server) {
 		this.clientSocket = clientSocket;
 		this.ipAddressList = ipAddressList;
+		this.server = server;
 	}
 
-	public ServerThread(Runnable target) {
-		super(target);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(String name) {
-		super(name);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(ThreadGroup group, Runnable target) {
-		super(group, target);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(ThreadGroup group, String name) {
-		super(group, name);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(Runnable target, String name) {
-		super(target, name);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(ThreadGroup group, Runnable target, String name) {
-		super(group, target, name);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(ThreadGroup group, Runnable target, String name, long stackSize) {
-		super(group, target, name, stackSize);
-		// TODO Auto-generated constructor stub
-	}
-
-	public ServerThread(ThreadGroup group, Runnable target, String name, long stackSize, boolean inheritThreadLocals) {
-		super(group, target, name, stackSize, inheritThreadLocals);
-		// TODO Auto-generated constructor stub
-	}
 	
 	public void run() {
 		try {
 			
-			
+//	string for getting messages from the client		
 			String reply;	
 			
 //			readers and writers
@@ -86,12 +50,10 @@ public class ServerThread extends Thread {
 					out.println("connectionSuccess");
 					
 //					read the client details sent from the client
-					String firstName = input.readLine();
-					String lastName = input.readLine();
 					String ipAddress = input.readLine();
 					
 //					create a new client object with the client details
-					ClientData client = new ClientData("annon", "annon", "annon", ipAddress);
+					client = new ClientData("annon", "annon", "annon", ipAddress);
 					System.out.println(client);
 					ipAddressList.add(client);
 				} else if (reply.equals("getContacts")) {	
@@ -107,8 +69,12 @@ public class ServerThread extends Thread {
 					
 				}else if (reply.equals("login")) {
 
+					System.out.println("logging in...");
 					String username = input.readLine();
 					String password = input.readLine();
+					
+					System.out.println("username: " + username);
+					System.out.println("password: " + password);
 					
 //					connect to the database and check the credentials
 					try {
@@ -118,14 +84,7 @@ public class ServerThread extends Thread {
 						Connection connection = null;
 						String url = "jdbc:mysql://localhost/messenger";
 						connection = DriverManager.getConnection(url, databaseUser, databasePass);
-						
-//						PreparedStatement pst = con.prepareStatement(sql)) {
-//
-//				            pst.setString(1, author);
-//				            pst.executeUpdate();
-//				            
-//				            System.out.println("A new author has been inserted");
-						
+										
 				        String statement = "SELECT * FROM users WHERE users.username = ? AND users.password = ?";
 						PreparedStatement pst = connection.prepareStatement(statement);
 						
@@ -135,15 +94,17 @@ public class ServerThread extends Thread {
 						ResultSet rs =	pst.executeQuery();
 						
 						if (rs.next()) {
-							System.out.println(rs.getString("username"));
-							
 							out.println("loginSuccess");
 							// write object to file
 							
-							ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
-							ClientData user = new ClientData(rs.getString("username"), rs.getString("firstname"), rs.getString("lastname"), null); 
-							System.out.println(user.getUserName());
-							oos.writeObject(user);
+							
+							client.setUserName(rs.getString("username"));
+							client.setFirstName(rs.getString("firstname"));
+							client.setLastName(rs.getString("lastname"));
+							System.out.println("Sending: " + client.toString());
+							out.println(client.getUserName());
+							
+							this.server.addClientSocket(this, client);
 							
 						} else {
 							System.out.print("Login failed");
@@ -156,7 +117,9 @@ public class ServerThread extends Thread {
 					}
 					
 				}else {
+					System.out.println("reply:" + reply);
 					System.out.println("Something went wrong in ServerThread.run()");
+					
 				}
 			
 			}
@@ -166,6 +129,16 @@ public class ServerThread extends Thread {
 			System.out.println("Error: ");
 			e.printStackTrace();
 		}
+	}
+
+
+	public Socket getClientSocket() {
+		return clientSocket;
+	}
+
+
+	public void setClientSocket(Socket clientSocket) {
+		this.clientSocket = clientSocket;
 	}
 	
 

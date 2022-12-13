@@ -1,15 +1,18 @@
 package ServerSide;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 
 import javafx.collections.ObservableList;
 
 public class Server extends Thread{
 
-	ServerSocket serverSocket;
-	ObservableList<ClientData> ipAddressList;
+	private ServerSocket serverSocket;
+	private ObservableList<ClientData> ipAddressList;
 	private int port;
+	private HashMap<ClientData, ServerThread> clientSockets = new HashMap<ClientData, ServerThread>();
 	
 	
 	public Server (int port, ObservableList<ClientData> ipAddressList) throws IOException {
@@ -20,37 +23,53 @@ public class Server extends Thread{
     	
 	}
 	
-
-	
 	public void run() {
 		System.out.println("In Server run");
 		// accept connections from clients
     	try {
     		while(true) {
-	    		Thread.sleep(1000);
+	    
 				System.out.println("Waiting on client to connect!");
 				Socket clientSocket = serverSocket.accept();
-				System.out.println("Client connected, sending hello world...");
+				System.out.println("Client connected");
 	//    		creates and starts a new thread from the ServerThread class
-				new ServerThread(clientSocket, ipAddressList).start();
+				ServerThread newThread = new ServerThread(clientSocket, ipAddressList, this);
+				newThread.start();  
     		}
     			
-    	}  catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
+    	}  catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		finally {
+//			try {
+////				serverSocket.close();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+		}
+		
+	}
+	
+	public void addClientSocket(ServerThread clientThread, ClientData client) {
+		clientSockets.put(client, clientThread);
+
+//		let all the other clients know that a new client has logged in
+		
+		clientSockets.forEach((key, value) -> {
 			try {
-				serverSocket.close();
+				PrintWriter out = new PrintWriter(value.getClientSocket().getOutputStream (), true);
+				out.println("addContact");
+				out.println(client.getUserName());
+				
+				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
-		
+			
+		});
 	}
 	
 	public void stopServer() throws IOException {
