@@ -3,8 +3,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Timestamp;
 import java.util.HashMap;
 
+import common.Message;
+import common.MessageCode;
 import javafx.collections.ObservableList;
 
 public class Server extends Thread{
@@ -58,16 +61,19 @@ public class Server extends Thread{
 //		let all the other clients know that a new client has logged in
 		clientSockets.forEach((key, value) -> {
 			try {
-				PrintWriter out = new PrintWriter(value.getClientSocket().getOutputStream (), true);
-				out.println("addContact");
-				out.println(client.getUserName());
+				//create an add_contact message where the new username is the payload
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+				Message addContact = new Message(MessageCode.ADD_CONTACT, "server", key.getUserName(), client.getUserName(), timestamp);
+				
+				// sent the message to the each user using their object output stream
+				value.getoOutputS().writeObject(addContact);
 				
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+//			
 		});
 	}
 	

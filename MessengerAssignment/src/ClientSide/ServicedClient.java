@@ -1,5 +1,7 @@
 package ClientSide;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import javafx.collections.FXCollections;
@@ -12,10 +14,14 @@ public class ServicedClient extends Service<String> {
 
 	ObservableList<String> contacts = FXCollections.observableArrayList();
 	Socket clientSocket;
+	private ObjectOutputStream oOutputS;
+	private ObjectInputStream oInputS;
 	
-	public ServicedClient(ObservableList<String> contacts, Socket clientSocket) {
+	public ServicedClient(ObservableList<String> contacts, Socket clientSocket, ObjectInputStream oInputS, ObjectOutputStream oOutputS) {
 		this.contacts = contacts;
 		this.clientSocket = clientSocket;
+		this.oInputS = oInputS;
+		this.oOutputS = oOutputS;
 //		??? put setOnSucceeded here???
 	}
 
@@ -28,7 +34,7 @@ public class ServicedClient extends Service<String> {
 			@Override
 			protected String call() throws Exception {
 				System.out.println("Creating Task in ServicedClient");
-				Client client = new Client(contacts, clientSocket);
+				Client client = new Client(contacts, clientSocket, oInputS, oOutputS);
 				client.start();
 				return "nothing";
 			}
