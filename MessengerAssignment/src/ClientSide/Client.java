@@ -6,12 +6,14 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.Timestamp;
 
 import ServerSide.ClientData;
 import common.Message;
 import common.MessageCode;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.TextArea;
 
 public class Client extends Thread {
 
@@ -19,12 +21,16 @@ public class Client extends Thread {
 	Socket clientSocket;
 	private ObjectOutputStream oOutputS;
 	private ObjectInputStream oInputS;
+	private ClientData user;
+	private TextArea ta;
 	
-	public Client(ObservableList<String> contacts, Socket clientSocket, ObjectInputStream oInputS, ObjectOutputStream oOutputS) {
+	public Client(ObservableList<String> contacts, Socket clientSocket, ObjectInputStream oInputS, ObjectOutputStream oOutputS, ClientData user, TextArea ta) {
 		this.contacts = contacts;
 		this.clientSocket = clientSocket;
 		this.oInputS = oInputS;
 		this.oOutputS = oOutputS;
+		this.user = user;
+		this.ta = ta;
 	}
 
 	public void run() {
@@ -68,7 +74,19 @@ public class Client extends Thread {
 				
 			}
 			System.out.println("Client: contacts updated");
+		} else if (message.getCode() == MessageCode.MESSAGE) {
+			ta.appendText(message.getPayload());
 		}
 	}
 
+	public void send(String destination, String messageText) {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message message = new Message(MessageCode.FORWARD_MESSAGE, user.getUserName(), destination, messageText, timestamp );
+		try {
+			oOutputS.writeObject(message);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }

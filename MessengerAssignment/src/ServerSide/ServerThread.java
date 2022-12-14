@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Set;
 
 import common.Message;
 import common.MessageCode;
@@ -77,6 +78,8 @@ public class ServerThread extends Thread {
 			getContacts(message);
 		} else if (message.getCode() == MessageCode.LOGOUT) {
 			logout(message);
+		}else if (message.getCode() == MessageCode.FORWARD_MESSAGE) {
+			forwardMessage(message);
 		}else {
 			System.out.println("Did not recogise code: " + message.getCode());
 		}
@@ -187,6 +190,31 @@ public class ServerThread extends Thread {
 		}
 
 		
+	}
+	
+	private void forwardMessage(Message message) {
+		String destination = message.getPayload();
+		
+		ClientData destinationClient = null;
+		
+		Set<ClientData> clients = server.getClientSockets().keySet();
+		
+		for (ClientData client : clients) {
+			if (client.getUserName().equals(destination)) {
+				destinationClient = client;
+				break;
+			}
+		}
+		
+		if (destinationClient != null) {
+			try {
+				message.setCode(MessageCode.MESSAGE);
+				server.getClientSockets().get(destinationClient).getoOutputS().writeObject(message);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	private void logout(Message message) {

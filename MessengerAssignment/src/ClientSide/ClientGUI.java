@@ -46,7 +46,7 @@ public class ClientGUI extends Application {
 	final private static Text feedback = new Text();
 	
 	private ClientData user;
-	ServicedClient servicedClient;
+	private ServicedClient servicedClient;
 	
 //	UI elements
 	private Stage primaryStage;
@@ -255,9 +255,7 @@ public class ClientGUI extends Application {
 		newMessageHB.getChildren().addAll(newMessageTF, sendButton);
 		
 		sendButton.setOnAction(event ->{
-			if (clientSocket != null) {
-//				send the message
-			}
+			servicedClient.send(recipientListCB.getValue(), newMessageTF.getText());
 		});
 		
 		logoutButton.setOnAction(event ->{
@@ -277,7 +275,7 @@ public class ClientGUI extends Application {
 		
 //		create serviced client so separate thread can be made with java fx
 		System.out.println("Creating servicedClient");
-	    servicedClient = new ServicedClient(contacts, clientSocket, oInputS, oOutputS);
+	    servicedClient = new ServicedClient(contacts, clientSocket, oInputS, oOutputS, user, messagesTA);
 		servicedClient.start();
 		
 		rootMessages.getChildren().addAll(welcome, recipientBox, messagesTA, newMessageHB, logoutButton);
