@@ -77,16 +77,19 @@ public class Server extends Thread{
 		});
 	}
 	
-	public void logoutClient(String user) {
+	public void logoutClient(ClientData user) {
+		// remove client from the hashmap
 		clientSockets.remove(user);
-		
 		
 //		let all the other clients know that a client has left
 		clientSockets.forEach((key, value) -> {
 			try {
-				PrintWriter out = new PrintWriter(value.getClientSocket().getOutputStream (), true);
-				out.println("removeContact");
-				out.println("user");
+				//create a remove_contact message where the contact to remove is the payload
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+				Message addContact = new Message(MessageCode.REMOVE_CONTACT, "server", key.getUserName(), user.getUserName(), timestamp);
+				
+				// sent the message to the each user using their object output stream
+				value.getoOutputS().writeObject(addContact);
 				
 				
 			} catch (IOException e) {

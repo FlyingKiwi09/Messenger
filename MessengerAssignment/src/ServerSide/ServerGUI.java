@@ -81,22 +81,6 @@ public class ServerGUI extends Application {
 	         // get the user input port number
             	Integer portNum = Integer.parseInt(portInput.getText());
             	
-//            	ServerSocket serverSocket = new ServerSocket(portNum);
-//            	
-//            	try {
-////            		accept the clientSocket from the serverSocket
-//            		while (true) {
-//            			System.out.println("Waiting on client to connect!");
-//            			Socket clientSocket = serverSocket.accept();
-//            			System.out.println("Client connected, senting hello world...");
-////            			creates and starts a new thread from the ServerThread class
-//            			new ServerThread(clientSocket, ipAddressList).start();
-//            		}	
-//            	} finally {
-//            		serverSocket.close();
-//            		System.out.println("Program finished!");
-//            	}
-            	
 	            try
 	            {
 	            	

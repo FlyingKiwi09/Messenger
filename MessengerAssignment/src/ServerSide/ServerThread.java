@@ -156,13 +156,10 @@ public class ServerThread extends Thread {
 		
 		ArrayList<ClientData> contacts = new ArrayList<>();
 		
-		for (ClientData client: ipAddressList) {
+		// get all the clients from the server hashmap of connected clients
+		for (ClientData client: server.getClientSockets().keySet()) {
 			System.out.println(client.toString());
 			contacts.add(client);
-		}
-		
-		for(ClientData client : contacts) {
-			System.out.println(client.toString());
 		}
 		
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -193,7 +190,7 @@ public class ServerThread extends Thread {
 	}
 	
 	private void logout(Message message) {
-		
+		server.logoutClient(client);
 	}
 
 	public Socket getClientSocket() {

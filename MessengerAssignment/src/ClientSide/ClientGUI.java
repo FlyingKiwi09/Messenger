@@ -46,7 +46,7 @@ public class ClientGUI extends Application {
 	final private static Text feedback = new Text();
 	
 	private ClientData user;
-	
+	ServicedClient servicedClient;
 	
 //	UI elements
 	private Stage primaryStage;
@@ -263,7 +263,7 @@ public class ClientGUI extends Application {
 		logoutButton.setOnAction(event ->{
 			// tell the server you're logging out so that it can remove the user from the list of logged in users.
 			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Message logoutMessage = new Message(MessageCode.LOGOUT, "server", user.getUserName(), "", timestamp);
+			Message logoutMessage = new Message(MessageCode.LOGOUT, user.getUserName(), "server", "", timestamp);
 			try {
 				oOutputS.writeObject(logoutMessage);
 			} catch (IOException e) {
@@ -277,7 +277,7 @@ public class ClientGUI extends Application {
 		
 //		create serviced client so separate thread can be made with java fx
 		System.out.println("Creating servicedClient");
-		ServicedClient servicedClient = new ServicedClient(contacts, clientSocket, oInputS, oOutputS);
+	    servicedClient = new ServicedClient(contacts, clientSocket, oInputS, oOutputS);
 		servicedClient.start();
 		
 		rootMessages.getChildren().addAll(welcome, recipientBox, messagesTA, newMessageHB, logoutButton);
