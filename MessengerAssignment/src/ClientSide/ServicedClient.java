@@ -50,6 +50,7 @@ public class ServicedClient extends Service<String> {
 	}
 	
 	public void send(String destination, String message) {
+		System.out.println("calling send message in serviced client");
 		client.send(destination, message);
 	}
 }

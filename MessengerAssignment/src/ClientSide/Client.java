@@ -80,6 +80,7 @@ public class Client extends Thread {
 	}
 
 	public void send(String destination, String messageText) {
+		System.out.println("calling send message in client");
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		Message message = new Message(MessageCode.FORWARD_MESSAGE, user.getUserName(), destination, messageText, timestamp );
 		try {

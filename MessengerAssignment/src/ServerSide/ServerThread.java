@@ -193,6 +193,8 @@ public class ServerThread extends Thread {
 	}
 	
 	private void forwardMessage(Message message) {
+		
+		System.out.println("recieved message for forwarding");
 		String destination = message.getPayload();
 		
 		ClientData destinationClient = null;

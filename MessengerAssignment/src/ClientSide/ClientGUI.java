@@ -255,6 +255,7 @@ public class ClientGUI extends Application {
 		newMessageHB.getChildren().addAll(newMessageTF, sendButton);
 		
 		sendButton.setOnAction(event ->{
+			System.out.println("Send message called");
 			servicedClient.send(recipientListCB.getValue(), newMessageTF.getText());
 		});
 		
@@ -272,6 +273,8 @@ public class ClientGUI extends Application {
 			showLoginScreen();
 			
 		});
+		
+		
 		
 //		create serviced client so separate thread can be made with java fx
 		System.out.println("Creating servicedClient");
