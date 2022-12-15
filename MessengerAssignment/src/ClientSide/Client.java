@@ -75,7 +75,19 @@ public class Client extends Thread {
 			}
 			System.out.println("Client: contacts updated");
 		} else if (message.getCode() == MessageCode.MESSAGE) {
-			ta.appendText(message.getPayload());
+			ta.appendText("\nFrom " + message.getFromUsername() + ":\n\t" + message.getPayload());
+			
+			// send a reply to say that the message was recieved
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			Message receivedMessage = new Message(MessageCode.MESSAGE_RECEIVED, user.getUserName(), message.getFromUsername(), message.getPayload(), timestamp);
+			try {
+				oOutputS.writeObject(receivedMessage);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else if (message.getCode() == MessageCode.MESSAGE_RECEIVED) {
+			ta.appendText("\n\t\tSent to " + message.getFromUsername() + ":\n\t\t\t" + message.getPayload());
 		}
 	}
 

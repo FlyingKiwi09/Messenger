@@ -80,6 +80,8 @@ public class ServerThread extends Thread {
 			logout(message);
 		}else if (message.getCode() == MessageCode.FORWARD_MESSAGE) {
 			forwardMessage(message);
+		}else if (message.getCode() == MessageCode.MESSAGE_RECEIVED) {
+			forwardMessageReceived(message);
 		}else {
 			System.out.println("Did not recogise code: " + message.getCode());
 		}
@@ -194,9 +196,10 @@ public class ServerThread extends Thread {
 	
 	private void forwardMessage(Message message) {
 		
-		System.out.println("recieved message for forwarding");
-		String destination = message.getPayload();
+		System.out.println("recieved message for forwarding: " + message.toString());
 		
+		// get the client that the message is for
+		String destination = message.getToUsername();
 		ClientData destinationClient = null;
 		
 		Set<ClientData> clients = server.getClientSockets().keySet();
@@ -204,13 +207,41 @@ public class ServerThread extends Thread {
 		for (ClientData client : clients) {
 			if (client.getUserName().equals(destination)) {
 				destinationClient = client;
+				System.out.println("Destination: " + destinationClient);
+				break;
+			}
+		}
+		
+		// if that client can be found forward the message onto them
+		if (destinationClient != null) {
+			try {
+				message.setCode(MessageCode.MESSAGE);
+				server.getClientSockets().get(destinationClient).getoOutputS().writeObject(message);
+				System.out.println("Sending: " + message.toString());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void forwardMessageReceived(Message message) {
+		// get the client that the message is for
+		String destination = message.getToUsername();
+		ClientData destinationClient = null;
+		
+		Set<ClientData> clients = server.getClientSockets().keySet();
+		
+		for (ClientData client : clients) {
+			if (client.getUserName().equals(destination)) {
+				destinationClient = client;
+				System.out.println("Destination: " + destinationClient);
 				break;
 			}
 		}
 		
 		if (destinationClient != null) {
 			try {
-				message.setCode(MessageCode.MESSAGE);
 				server.getClientSockets().get(destinationClient).getoOutputS().writeObject(message);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

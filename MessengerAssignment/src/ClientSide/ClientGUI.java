@@ -246,6 +246,7 @@ public class ClientGUI extends Application {
 //	 new message	
 		HBox newMessageHB = new HBox();
 		TextField newMessageTF = new TextField();
+		newMessageTF.setText(null);
 		Button sendButton = new Button("Send");
 		
 		Button logoutButton = new Button("Logout");
@@ -256,7 +257,18 @@ public class ClientGUI extends Application {
 		
 		sendButton.setOnAction(event ->{
 			System.out.println("Send message called");
-			servicedClient.send(recipientListCB.getValue(), newMessageTF.getText());
+			if (recipientListCB.getValue() != null) {
+				if (newMessageTF.getText() != null) {
+					servicedClient.send(recipientListCB.getValue(), newMessageTF.getText());
+					newMessageTF.setText(null);
+				} else {
+					System.out.println("write a message");
+				}
+				
+			} else {
+				System.out.println("select a recipient to message");
+			}
+			
 		});
 		
 		logoutButton.setOnAction(event ->{
