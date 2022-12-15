@@ -83,6 +83,8 @@ public class ServerThread extends Thread {
 			forwardMessage(message);
 		}else if (message.getCode() == MessageCode.MESSAGE_RECEIVED) {
 			forwardMessageReceived(message);
+		}else if (message.getCode() == MessageCode.GET_MESSAGES) {
+			sendOldMessages(message);
 		}else {
 			System.out.println("Did not recogise code: " + message.getCode());
 		}
@@ -236,8 +238,34 @@ public class ServerThread extends Thread {
 		}
 		
 		// save the message to the database
+		server.getDatabaseHandler().saveMessage(message);
 		
+	}
+	
+	private void sendOldMessages(Message message) {
+		// get old messages from the database where the user and recipient are the sender&reciever
+		// note: the client sends their name as the fromUsername and the contact name as the payload
+		System.out.println("requesting messages from databasehandler");
+		ArrayList<Message> messages = server.getDatabaseHandler().getMessages(message.getFromUsername(), message.getPayload());
 		
+		System.out.println("recieved " + messages.size() + "from the databasehandler");
+		
+		try {
+			// tell the client how many messages to expect
+			message.setPayload("" + messages.size());
+			oOutputS.writeObject(message);
+			
+			// send the messages
+			for (Message oldMessage : messages) {
+				oOutputS.writeObject(oldMessage);
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// send the messages
 	}
 	
 	private void logout(Message message) {

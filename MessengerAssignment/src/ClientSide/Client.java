@@ -2,9 +2,11 @@ package ClientSide;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.sql.Timestamp;
 
@@ -23,26 +25,49 @@ public class Client extends Thread {
 	private ObjectInputStream oInputS;
 	private ClientData user;
 	private TextArea ta;
+	private ClientGUI clientGUI;
 	
-	public Client(ObservableList<String> contacts, Socket clientSocket, ObjectInputStream oInputS, ObjectOutputStream oOutputS, ClientData user, TextArea ta) {
+	
+//	constructor throws an error if a connection can't be made
+	public Client(ClientGUI gui, ObservableList<String> contacts, Socket clientSocket,ClientData user) throws IOException, ClassNotFoundException {
+		this.clientGUI = gui;
 		this.contacts = contacts;
 		this.clientSocket = clientSocket;
-		this.oInputS = oInputS;
-		this.oOutputS = oOutputS;
 		this.user = user;
-		this.ta = ta;
+		
+//		create the output and input streams when connecting to the server
+		OutputStream out = clientSocket.getOutputStream();
+		InputStream in = clientSocket.getInputStream();
+		
+		System.out.println("got streams");
+		
+		oOutputS = new ObjectOutputStream(out);
+		oOutputS.flush();
+		oInputS = new ObjectInputStream(in);
+		
+		System.out.println("created input and output ");
+		
+//			send a message to confirm the connection
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message connectionMessage = new Message(MessageCode.CONFIRM_CONNECTION, "annon", "server", "", timestamp);
+		oOutputS.writeObject(connectionMessage);
+		
+//			get a response to confirm the connection
+		Message reply = (Message) oInputS.readObject();
+		processMessage(reply);
+
+		
+
 	}
 
 	public void run() {
 		System.out.println("Waiting on message");
-		
 		try {
 				while(true) {
 					// process incoming messages
 					Message message = (Message)oInputS.readObject();
 					System.out.println(message.toString());
-					processMessage(message);
-						
+					processMessage(message);	
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -56,7 +81,9 @@ public class Client extends Thread {
 	
 	private void processMessage(Message message) {
 		if (message.getCode() == MessageCode.ADD_CONTACT) {
-			contacts.add(message.getPayload());
+			if (!(contacts.contains(message.getPayload()))){
+				contacts.add(message.getPayload());
+			}
 		} else if (message.getCode() == MessageCode.REMOVE_CONTACT) {
 			contacts.remove(message.getPayload());
 		} else if (message.getCode() == MessageCode.GET_CONTACTS) {
@@ -66,7 +93,10 @@ public class Client extends Thread {
 				try {
 					ClientData client;
 					client = (ClientData) oInputS.readObject();
-					contacts.add(client.getUserName());
+					
+					if (!(contacts.contains(client.getUserName()))){
+						contacts.add(client.getUserName());
+					}
 				} catch (ClassNotFoundException | IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -75,6 +105,7 @@ public class Client extends Thread {
 			}
 			System.out.println("Client: contacts updated");
 		} else if (message.getCode() == MessageCode.MESSAGE) {
+			// add the message to the messages text area
 			ta.appendText("\nFrom " + message.getFromUsername() + ":\n\t" + message.getPayload());
 			
 			// send a reply to say that the message was recieved
@@ -88,7 +119,47 @@ public class Client extends Thread {
 			}
 		} else if (message.getCode() == MessageCode.MESSAGE_RECEIVED) {
 			ta.appendText("\n\t\tSent to " + message.getFromUsername() + ":\n\t\t\t" + message.getPayload());
+		}else if (message.getCode() == MessageCode.GET_MESSAGES) {
+			processOldMessages(message);
 		}
+	}
+	
+
+//	login sends the username and password to the server for verification 
+//	if the credentials are verified, the server sends back a Client object with the users details.
+//	the method returns this client or null if the details can't be verified
+	public ClientData login(String username, String password) {
+		System.out.println("calling login in client");
+		
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message loginMessage = new Message(MessageCode.LOGIN, username, "server", password, timestamp);
+		try {
+			oOutputS.writeObject(loginMessage);
+			
+			Message message = (Message)oInputS.readObject();
+			if (message.getPayload().equals("loginSuccess")) {
+				
+				try {
+					user = (ClientData) oInputS.readObject();
+					return user;
+				} catch (ClassNotFoundException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			} else {
+				System.out.println("unsuccessful login");
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+		
 	}
 
 	public void send(String destination, String messageText) {
@@ -102,4 +173,78 @@ public class Client extends Thread {
 			e.printStackTrace();
 		}
 	}
+	
+	public void updateMessages(String contactUsername, TextArea ta) {
+		// clear the message text area and write a heading
+		System.out.println("calling updateMessages in client");
+		
+		this.ta = ta;
+		ta.clear();
+		ta.appendText("Messages with " + contactUsername);
+		
+		
+		
+		// request any old messages from the server
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message requestMessages = new Message(MessageCode.GET_MESSAGES, user.getUserName(), "server", contactUsername, timestamp);
+		
+		try {
+			oOutputS.writeObject(requestMessages);
+			System.out.println("sent request to server");
+			// replies are sent to the thread in the Client class
+			
+			
+				
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void processOldMessages(Message message) {
+		
+		System.out.println("processing old messages");
+		// check there are messages being returned
+		if (message.getCode() == MessageCode.GET_MESSAGES) {
+			// add each message to the message window
+			for(int i = 0; i < Integer.parseInt(message.getPayload()); i++ ) {
+				
+				Message oldMessage;
+				try {
+					oldMessage = (Message) oInputS.readObject();
+					
+					// if it's a message this user sent 
+					if (oldMessage.getFromUsername().equals(user.getUserName())) {
+						ta.appendText("\n\t\tSent to " + oldMessage.getFromUsername() + ":\n\t\t\t" + oldMessage.getPayload());
+						
+					} else {
+						ta.appendText("\nFrom " + oldMessage.getFromUsername() + ":\n\t" + oldMessage.getPayload());
+					}
+				} catch (ClassNotFoundException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		}
+
+		System.out.println("Client: contacts updated");
+	}
+	
+	public void getContacts() {
+		try {
+			System.out.println("getContacts called");
+	//		write to the server
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			Message getContactsMessage = new Message(MessageCode.GET_CONTACTS, "server", user.getUserName(), "", timestamp);
+			oOutputS.writeObject(getContactsMessage);
+			System.out.println("contacts request sent to server");
+			
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	}
+	
 }

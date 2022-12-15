@@ -14,21 +14,20 @@ import javafx.scene.control.TextArea;
 // Service runs a thread by performing the work defined in Task
 public class ServicedClient extends Service<String> {
 
+	private ClientGUI clientGUI;
 	ObservableList<String> contacts = FXCollections.observableArrayList();
 	Socket clientSocket;
-	private ObjectOutputStream oOutputS;
-	private ObjectInputStream oInputS;
 	private ClientData user;
 	private Client client;
 	private TextArea ta;
 	
-	public ServicedClient(ObservableList<String> contacts, Socket clientSocket, ObjectInputStream oInputS, ObjectOutputStream oOutputS, ClientData user, TextArea ta) {
+	public ServicedClient(ClientGUI gui, ObservableList<String> contacts, Socket clientSocket, ClientData user) {
+		this.clientGUI = gui;
 		this.contacts = contacts;
 		this.clientSocket = clientSocket;
-		this.oInputS = oInputS;
-		this.oOutputS = oOutputS;
+
 		this.user = user;
-		this.ta = ta;
+	
 //		??? put setOnSucceeded here???
 	}
 
@@ -37,20 +36,39 @@ public class ServicedClient extends Service<String> {
 		// TODO Auto-generated method stub
 		return new Task <String>()
 		{
-
 			@Override
 			protected String call() throws Exception {
 				System.out.println("Creating Task in ServicedClient");
-				client = new Client(contacts, clientSocket, oInputS, oOutputS, user, ta);
-				client.start();
+				client = new Client(clientGUI, contacts, clientSocket, user);
+				System.out.println(client.toString());
+				
 				return "nothing";
 			}
 	
 		};
 	}
 	
+	public ClientData login(String username, String password) {
+		System.out.println("calling login in serviced client");
+		return client.login (username, password);
+//		client.start();
+	}
+	
 	public void send(String destination, String message) {
 		System.out.println("calling send message in serviced client");
 		client.send(destination, message);
+	}
+	
+	public void updateMessages(String contactUsername, TextArea messagesTA) {
+		System.out.println("calling updateMessages in serviced client");
+		client.updateMessages(contactUsername, messagesTA);
+	}
+	
+	public void getContacts() {
+		client.getContacts();
+	}
+	
+	public void startClient() {
+		client.start();
 	}
 }

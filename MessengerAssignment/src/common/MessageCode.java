@@ -10,5 +10,6 @@ public enum MessageCode {
 	ADD_CONTACT,
 	REMOVE_CONTACT,
 	MESSAGE_RECEIVED,
+	GET_MESSAGES,
 	OTHER
 }

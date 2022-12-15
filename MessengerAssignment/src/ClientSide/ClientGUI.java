@@ -1,22 +1,10 @@
 package ClientSide;
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-
-import ServerSide.ServicedServer;
 import common.ClientData;
-import common.Message;
-import common.MessageCode;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -38,16 +26,14 @@ public class ClientGUI extends Application {
 	private static Socket clientSocket;
 	private static ObservableList<String> contacts = FXCollections.observableArrayList();
 	static TextField messagesTF;
-	
-//	reader and writers
-	private ObjectInputStream oInputS;
-	private ObjectOutputStream oOutputS;
 	 
 	final private static Text feedback = new Text();
 	
 	private ClientData user;
 	private ServicedClient servicedClient;
-	
+	VBox rootLogin;
+	VBox messagesVBox;
+	VBox loginVBox;
 //	UI elements
 	private Stage primaryStage;
 
@@ -61,105 +47,18 @@ public class ClientGUI extends Application {
 		this.primaryStage = primaryStage;
 		
 		//set up UI
-		VBox root = new VBox();
+		VBox loginRoot = new VBox();
+		
+		HBox portNumberHB = new HBox();
+		Label portNumberLabel = new Label("Port Number: ");
+		TextField portNumberTF = new TextField();
+		
+		HBox ipAddressHB = new HBox();
+		Label ipAddressLable = new Label("Port Number: ");
+		TextField ipAddressTF = new TextField();
+		
 		Button connectButton = new Button("Connect");		
-		messagesTF = new TextField();
-
-		root.getChildren().addAll(connectButton, messagesTF);
 		
-		
-//		listeners for buttons
-		connectButton.setOnAction(event -> {
-			connectToServer();
-		});
-
-		// scene set up
-		primaryStage.setScene(new Scene(root, 300, 400));
-		primaryStage.sizeToScene();
-		primaryStage.setTitle("Chat Box Clientside");
-		primaryStage.show();
-	}
-	
-	private void connectToServer() {
-		
-//		connect to the server
-		System.out.println("Client says: trying to connect to server...");
-		try {
-			clientSocket = new Socket(serverAddress, port);
-			System.out.println("connected");
-			
-//			create the output and input streams when connecting to the server
-			OutputStream out = clientSocket.getOutputStream();
-			InputStream in = clientSocket.getInputStream();
-			
-			System.out.println("got streams");
-			
-			oOutputS = new ObjectOutputStream(out);
-			oOutputS.flush();
-			oInputS = new ObjectInputStream(in);
-			
-			System.out.println("created input and output ");
-			
-			
-//			send a message to confirm the connection
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Message connectionMessage = new Message(MessageCode.CONFIRM_CONNECTION, "annon", "server", "", timestamp);
-			oOutputS.writeObject(connectionMessage);
-			
-//			get a response to confirm the connection
-			Message reply = (Message) oInputS.readObject();
-			processMessage(reply);
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}		
-	
-	}
-	
-	private void processMessage(Message message) {
-		
-		if (message.getCode() == MessageCode.CONFIRM_CONNECTION) {
-//			show login screen
-			showLoginScreen();
-		}
-		
-	}
-	
-	private void getContacts() {
-		try {
-			System.out.println("getContacts called");
-	//		write to the server
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Message getContactsMessage = new Message(MessageCode.GET_CONTACTS, "server", user.getUserName(), "", timestamp);
-			oOutputS.writeObject(getContactsMessage);
-			
-			Message reply = (Message) oInputS.readObject();
-			
-			// check there are contacts being returned 
-			if (reply.getCode() == MessageCode.GET_CONTACTS) {
-				// add each contact to the contacts list
-				for(int i = 0; i < Integer.parseInt(reply.getPayload()); i++ ) {
-					ClientData client = (ClientData) oInputS.readObject();
-					contacts.add(client.getUserName());
-				}
-			}
-
-			System.out.println("Client: contacts updated");
-				
-			} catch (ClassNotFoundException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	}
-	
-	private void showLoginScreen() {
-		
-		VBox rootLogin = new VBox();
-		Text loginHeading = new Text("Login");
 		
 		HBox usernameHB = new HBox();
 		Label usernameLabel = new Label("Username: ");
@@ -169,74 +68,83 @@ public class ClientGUI extends Application {
 		Label passwordLabel = new Label("Password: ");
 		TextField passwordTF = new TextField();
 		
-		Button loginButton = new Button("Login");
+		Button loginButton = new Button("login");
+		loginButton.setDisable(true);
 		
-//		Text feedback = new Text();
+//		combine inputs and labels into HBoxes
+		portNumberHB.getChildren().addAll(portNumberLabel, portNumberTF);
+		ipAddressHB.getChildren().addAll(ipAddressLable, ipAddressTF);
 		usernameHB.getChildren().addAll(usernameLabel, usernameTF);
 		passwordHB.getChildren().addAll(passwordLabel, passwordTF);
 		
+//		listeners for buttons
+		connectButton.setOnAction(event -> {
+				// connecting to server
+				try {
+					connectToServer();
+//					create serviced client so separate thread can be made with java fx
+//					this thread holds the connection with the server
+					System.out.println("Creating servicedClient");
+				    servicedClient = new ServicedClient(this, contacts, clientSocket,user);
+				    servicedClient.start();
+					loginButton.setDisable(false);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		});
 		
 		loginButton.setOnAction(event ->{
 			System.out.println("login button pressed");
-//			sent the username and password to the login method. 
-//			login() returns the user if one is found in the database or null if no user is found
-			user = login(usernameTF.getText(), passwordTF.getText());
+
+//			logging in
+			user = servicedClient.login(usernameTF.getText(), passwordTF.getText());
+			
+			
 			
 			if (user != null) {
 //				show logged in screen
 				feedback.setText("Success");
 				showMessagesScreen(user);
+				servicedClient.startClient();
 			} else {
 //				display failed login message
 				feedback.setText("Error: username or password are incorrect.");
 			}
+			
 		});
 		
-		rootLogin.getChildren().addAll(loginHeading, usernameHB, passwordHB, loginButton, feedback);
-		Scene loginScene = new Scene(rootLogin, 400, 400);
-		this.primaryStage.setScene(loginScene);
+		
+		loginRoot.getChildren().addAll(portNumberHB, ipAddressHB, connectButton, usernameHB,  passwordHB, loginButton);
+
+		// scene set up
+		primaryStage.setScene(new Scene(loginRoot, 300, 400));
+		primaryStage.sizeToScene();
+		primaryStage.setTitle("Chat Box Clientside");
+		primaryStage.show();
 	}
 	
-//	login sends the username and password to the server for verification 
-//	if the credentials are verified, the server sends back a Client object with the users details.
-//	the method returns this client or null if the details can't be verified
-	private ClientData login(String username, String password) {
-		System.out.println("login method called");
+	private void connectToServer() throws UnknownHostException, IOException {
 		
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		Message loginMessage = new Message(MessageCode.LOGIN, username, "server", password, timestamp);
-		try {
-			oOutputS.writeObject(loginMessage);
-			
-//			get the reply from the server: says successful or not
-			
-			Message reply = (Message) oInputS.readObject();
-			
-			if (reply.getPayload().equals("loginSuccess")) {
-				ClientData me = (ClientData) oInputS.readObject();
-				return me;
-			} else {
-				return null;
-			}
-			
-		} catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		connect to the server
+		System.out.println("Client says: trying to connect to server...");
 		
-		return null;
-	
+		clientSocket = new Socket(serverAddress, port);
+		System.out.println("connected");
+		
+//		
 	}
 	
-	private void showMessagesScreen(ClientData user) {
+	
+	public void showMessagesScreen(ClientData user) {
 		VBox rootMessages = new VBox();
 		Text welcome = new Text("Welcome " + user.getUserName());
 		
 //recipient 
 		Label recipientLabel = new Label("Select a recipient: ");
 		final ComboBox<String> recipientListCB = new ComboBox<String>(contacts);
+//		servicedClient.getContacts();
 		
-		getContacts();
 		HBox recipientBox = new HBox();
 // message
 		TextArea messagesTA = new TextArea();
@@ -258,12 +166,9 @@ public class ClientGUI extends Application {
 		
 //		on actions for combo box and buttons
 		recipientListCB.setOnAction(event -> {
-			// clear the message text area and write a heading
-			messagesTA.clear();
-			messagesTA.appendText("Messages with " + recipientListCB.getValue());
 			
-			// get any old messages from the server
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			// call through to the client thread to get and updated list of messages based on the contact selection
+			servicedClient.updateMessages(recipientListCB.getValue(), messagesTA);
 			
 		});
 		
@@ -285,29 +190,25 @@ public class ClientGUI extends Application {
 		
 		logoutButton.setOnAction(event ->{
 			// tell the server you're logging out so that it can remove the user from the list of logged in users.
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Message logoutMessage = new Message(MessageCode.LOGOUT, user.getUserName(), "server", "", timestamp);
-			try {
-				oOutputS.writeObject(logoutMessage);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			showLoginScreen();
+//			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+//			Message logoutMessage = new Message(MessageCode.LOGOUT, user.getUserName(), "server", "", timestamp);
+//			try {
+//				oOutputS.writeObject(logoutMessage);
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			
+//			showLoginScreen();
 			
 		});
-		
-		
-		
-//		create serviced client so separate thread can be made with java fx
-		System.out.println("Creating servicedClient");
-	    servicedClient = new ServicedClient(contacts, clientSocket, oInputS, oOutputS, user, messagesTA);
-		servicedClient.start();
-		
+
 		rootMessages.getChildren().addAll(welcome, recipientBox, messagesTA, newMessageHB, logoutButton);
 		Scene messagesScene = new Scene(rootMessages, 400, 400);
 		this.primaryStage.setScene(messagesScene);
+		
+
+		servicedClient.getContacts();
 
 	}
 
