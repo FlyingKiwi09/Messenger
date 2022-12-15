@@ -13,8 +13,8 @@ import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 
-import ServerSide.ClientData;
 import ServerSide.ServicedServer;
+import common.ClientData;
 import common.Message;
 import common.MessageCode;
 import javafx.application.Application;
@@ -235,6 +235,7 @@ public class ClientGUI extends Application {
 //recipient 
 		Label recipientLabel = new Label("Select a recipient: ");
 		final ComboBox<String> recipientListCB = new ComboBox<String>(contacts);
+		
 		getContacts();
 		HBox recipientBox = new HBox();
 // message
@@ -254,6 +255,17 @@ public class ClientGUI extends Application {
 //		put objects together
 		recipientBox.getChildren().addAll(recipientLabel, recipientListCB);
 		newMessageHB.getChildren().addAll(newMessageTF, sendButton);
+		
+//		on actions for combo box and buttons
+		recipientListCB.setOnAction(event -> {
+			// clear the message text area and write a heading
+			messagesTA.clear();
+			messagesTA.appendText("Messages with " + recipientListCB.getValue());
+			
+			// get any old messages from the server
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			
+		});
 		
 		sendButton.setOnAction(event ->{
 			System.out.println("Send message called");

@@ -2,6 +2,7 @@ package ServerSide;
 
 import java.io.IOException;
 
+import common.ClientData;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;

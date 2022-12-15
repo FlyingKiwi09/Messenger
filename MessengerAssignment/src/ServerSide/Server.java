@@ -3,9 +3,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 
+import common.ClientData;
 import common.Message;
 import common.MessageCode;
 import javafx.collections.ObservableList;
@@ -16,13 +18,22 @@ public class Server extends Thread{
 	private ObservableList<ClientData> ipAddressList;
 	private int port;
 	private HashMap<ClientData, ServerThread> clientSockets = new HashMap<ClientData, ServerThread>();
-	
+	private DatabaseHandler databaseHandler;
 	
 	public Server (int port, ObservableList<ClientData> ipAddressList) throws IOException {
 		this.ipAddressList = ipAddressList;
 		this.port = port;
 		serverSocket = new ServerSocket(port);
     	System.out.println("Server started on: " + port);
+    	
+//    	create a new databaseHandler. 
+//    	The constructor creates the connection and throws errors if a connection can't be established.
+    	try {
+			this.databaseHandler = new DatabaseHandler();
+		} catch (ClassNotFoundException | SQLException e) {
+			System.out.println("Error connecting to the database, some functions may not be running");
+			e.printStackTrace();
+		}
     	
 	}
 	
@@ -107,6 +118,26 @@ public class Server extends Thread{
 
 	public HashMap<ClientData, ServerThread> getClientSockets() {
 		return clientSockets;
+	}
+
+	public DatabaseHandler getDatabaseHandler() {
+		return databaseHandler;
+	}
+
+	public void setDatabaseHandler(DatabaseHandler databaseHandler) {
+		this.databaseHandler = databaseHandler;
+	}
+
+	public ServerSocket getServerSocket() {
+		return serverSocket;
+	}
+
+	public ObservableList<ClientData> getIpAddressList() {
+		return ipAddressList;
+	}
+
+	public int getPort() {
+		return port;
 	}
 
 

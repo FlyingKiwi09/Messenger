@@ -1,4 +1,4 @@
-package ServerSide;
+package common;
 
 import java.io.Serializable;
 

@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Set;
 
+import common.ClientData;
 import common.Message;
 import common.MessageCode;
 import javafx.collections.ObservableList;
@@ -103,55 +104,39 @@ public class ServerThread extends Thread {
 		String username = message.getFromUsername();
 		String password = message.getPayload();
 		
-		System.out.println("username: " + username);
+		
+		
+		System.out.println("Calling validateLogin on the databasehandler\nusername: " + username);
 		System.out.println("password: " + password);
 		
-//		connect to the database and check the credentials
-		try {
-    		String databaseUser = "root";
-        	String databasePass = "";
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection connection = null;
-			String url = "jdbc:mysql://localhost/messenger";
-			connection = DriverManager.getConnection(url, databaseUser, databasePass);
-							
-	        String statement = "SELECT * FROM users WHERE users.username = ? AND users.password = ?";
-			PreparedStatement pst = connection.prepareStatement(statement);
+//		databasehandler queries the database and returns a client, returns null if a match isn't found
+		ClientData returnedClient = server.getDatabaseHandler().validateLogin(username, password);
 			
-			pst.setString(1, username);
-			pst.setString(2, password);
-
-			ResultSet rs =	pst.executeQuery();
+		// prepare a reply to the client
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message reply = new Message(MessageCode.LOGIN, "Server", "", "", timestamp);
+		
+		if (client != null) {
+			// reply that the login is successful 
+			reply.setPayload("loginSuccess");
 			
-			// prepare a reply to the client
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			Message reply = new Message(MessageCode.LOGIN, "Server", "", "", timestamp);
-			
-			if (rs.next()) {
-				// reply that the login is successful 
-				reply.setPayload("loginSuccess");
+			try {
 				oOutputS.writeObject(reply);
-				
+
 				// send the ClientData as an object
-				client.setUserName(rs.getString("username"));
-				client.setFirstName(rs.getString("firstname"));
-				client.setLastName(rs.getString("lastname"));
+				client.setUserName(returnedClient.getUserName());
+				client.setFirstName(returnedClient.getFirstName());
+				client.setLastName(returnedClient.getLastName());
 				oOutputS.writeObject(client);
 				
-
-				// tell the server to add this client to it's hash map
-				// the server also tells other clients that this user is online at this point
-				this.server.addClientSocket(this, client);
-				
-			} else {
-				// reply that the login has failed
-				reply.setPayload("loginFailed");
-				oOutputS.writeObject(reply);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+			// tell the server to add this client to it's hash map
+			// the server also tells other clients that this user is online at this point
+			this.server.addClientSocket(this, client);
 		}
 	}
 	
@@ -240,6 +225,7 @@ public class ServerThread extends Thread {
 			}
 		}
 		
+		// send the confirmation message to the sender to let them know that their message was sent
 		if (destinationClient != null) {
 			try {
 				server.getClientSockets().get(destinationClient).getoOutputS().writeObject(message);
@@ -248,6 +234,10 @@ public class ServerThread extends Thread {
 				e.printStackTrace();
 			}
 		}
+		
+		// save the message to the database
+		
+		
 	}
 	
 	private void logout(Message message) {

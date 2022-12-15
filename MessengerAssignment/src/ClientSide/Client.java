@@ -8,7 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.sql.Timestamp;
 
-import ServerSide.ClientData;
+import common.ClientData;
 import common.Message;
 import common.MessageCode;
 import javafx.collections.FXCollections;
