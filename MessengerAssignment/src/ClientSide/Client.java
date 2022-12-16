@@ -1,21 +1,34 @@
 package ClientSide;
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.Timestamp;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+
 import common.ClientData;
+import common.EncryptionManager;
 import common.Message;
 import common.MessageCode;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TextArea;
+
+
 
 public class Client extends Thread {
 
@@ -26,6 +39,8 @@ public class Client extends Thread {
 	private ClientData user;
 	private TextArea ta;
 	private ClientGUI clientGUI;
+	private int myPublicKey; 
+	private int privateKey;
 	
 	
 //	constructor throws an error if a connection can't be made
@@ -53,10 +68,18 @@ public class Client extends Thread {
 		oOutputS.writeObject(connectionMessage);
 		
 //			get a response to confirm the connection
-		Message reply = (Message) oInputS.readObject();
-		processMessage(reply);
+		Message connectionReply = (Message) oInputS.readObject();
+		processMessage(connectionReply);
 
+//		generate keys
+		myPublicKey = getRandomKeyInt();
 		
+		Timestamp timestamp2 = new Timestamp(System.currentTimeMillis());
+		Message generateKeys = new Message(MessageCode.KEYS, "annon", "server", ("" + myPublicKey), timestamp2);
+		oOutputS.writeObject(generateKeys);
+		
+		Message keyReply = (Message) oInputS.readObject();
+		processMessage(keyReply);
 
 	}
 
@@ -121,9 +144,37 @@ public class Client extends Thread {
 			ta.appendText("\n\t\tSent to " + message.getFromUsername() + ":\n\t\t\t" + message.getPayload());
 		}else if (message.getCode() == MessageCode.GET_MESSAGES) {
 			processOldMessages(message);
+		} else if (message.getCode() == MessageCode.KEYS) {
+			generateKey(message);
 		}
 	}
 	
+	//https://www.javatpoint.com/diffie-hellman-algorithm-in-java
+	private void generateKey(Message message) {
+		int G = 7919;
+		int P = 7907;
+		int theirPublicKey = Integer.parseInt(message.getPayload());
+		
+		long x = calculatePower(G, myPublicKey, P);
+		long y = calculatePower(G, theirPublicKey, P);
+		
+		long sk = calculatePower(theirPublicKey, myPublicKey, P);
+		System.out.println(sk);
+		
+	}
+	
+	// create calculatePower() method to find the value of x ^ y mod P  
+    private static long calculatePower(long x, long y, long P)  
+    {  
+        long result = 0;          
+        if (y == 1){  
+            return x;  
+        }  
+        else{  
+            result = ((long)Math.pow(x, y)) % P;  
+            return result;  
+        }  
+    } 
 
 //	login sends the username and password to the server for verification 
 //	if the credentials are verified, the server sends back a Client object with the users details.
@@ -133,6 +184,28 @@ public class Client extends Thread {
 		
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		Message loginMessage = new Message(MessageCode.LOGIN, username, "server", password, timestamp);
+		
+		String plainText = username;
+	    String secret = ("" + privateKey);
+	    String salt = "12345678";
+	    IvParameterSpec ivParameterSpec = EncryptionManager.generateIv();
+	    SecretKey key;
+		try {
+			key = EncryptionManager.getKeyFromPassword(secret,salt);
+			String cipherText = EncryptionManager.encrypt(plainText, key, ivParameterSpec);
+		    String decryptedCipherText = EncryptionManager.decrypt(
+		      cipherText, key, ivParameterSpec);
+		    
+		    System.out.println(cipherText);
+		    System.out.println(decryptedCipherText);
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException | 
+				NoSuchPaddingException | InvalidAlgorithmParameterException | BadPaddingException | 
+				IllegalBlockSizeException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	    
+		
 		try {
 			oOutputS.writeObject(loginMessage);
 			
@@ -245,6 +318,10 @@ public class Client extends Thread {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+	}
+	
+	private int getRandomKeyInt() {
+		return (int) Math.floor(Math.random()*100000 +1);
 	}
 	
 }

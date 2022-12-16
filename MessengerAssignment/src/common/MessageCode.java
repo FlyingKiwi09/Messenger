@@ -11,5 +11,6 @@ public enum MessageCode {
 	REMOVE_CONTACT,
 	MESSAGE_RECEIVED,
 	GET_MESSAGES,
+	KEYS,
 	OTHER
 }

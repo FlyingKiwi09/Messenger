@@ -30,6 +30,10 @@ public class ServerThread extends Thread {
 	private ClientData client;
 	private Server server;
 	
+	//keys
+	private int myPublicKey; 
+	private int privateKey;
+	
 //	readers and writers
 	private ObjectInputStream oInputS;
 	private ObjectOutputStream oOutputS;
@@ -85,6 +89,8 @@ public class ServerThread extends Thread {
 			forwardMessageReceived(message);
 		}else if (message.getCode() == MessageCode.GET_MESSAGES) {
 			sendOldMessages(message);
+		}else if (message.getCode() == MessageCode.KEYS) {
+			generateKey(message);
 		}else {
 			System.out.println("Did not recogise code: " + message.getCode());
 		}
@@ -100,6 +106,46 @@ public class ServerThread extends Thread {
 			e.printStackTrace();
 		}
 	}
+	
+	
+	//https://www.javatpoint.com/diffie-hellman-algorithm-in-java
+	private void generateKey(Message message) {
+		
+		myPublicKey = getRandomKeyInt();
+		
+		int G = 7919;
+		int P = 7907;
+		int theirPublicKey = Integer.parseInt(message.getPayload());
+		
+		long x = calculatePower(G, myPublicKey, P);
+		long y = calculatePower(G, theirPublicKey, P);
+		
+		long sk = calculatePower(theirPublicKey, myPublicKey, P);
+		System.out.println(sk);
+		
+		// reply to the client with public key
+		message.setPayload("" + myPublicKey);
+		try {
+			oOutputS.writeObject(message);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	// create calculatePower() method to find the value of x ^ y mod P  
+    private static long calculatePower(long x, long y, long P)  
+    {  
+        long result = 0;          
+        if (y == 1){  
+            return x;  
+        }  
+        else{  
+            result = ((long)Math.pow(x, y)) % P;  
+            return result;  
+        }  
+    } 
 	
 	private void validateLogin(Message message) {
 		System.out.println("logging in...");
@@ -316,6 +362,8 @@ public class ServerThread extends Thread {
 		return server;
 	}
 	
-	
+	private int getRandomKeyInt() {
+		return (int) Math.floor(Math.random()*100000 +1);
+	}
 
 }
