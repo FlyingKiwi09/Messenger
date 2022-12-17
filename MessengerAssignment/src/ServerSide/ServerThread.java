@@ -31,8 +31,10 @@ public class ServerThread extends Thread {
 	private Server server;
 	
 	//keys
-	private int myPublicKey; 
-	private int privateKey;
+	private int myPrivateKey; 
+	private double sharedKey;
+	int G = 3;
+	int P = 17;
 	
 //	readers and writers
 	private ObjectInputStream oInputS;
@@ -109,22 +111,23 @@ public class ServerThread extends Thread {
 	
 	
 	//https://www.javatpoint.com/diffie-hellman-algorithm-in-java
+	//https://www.geeksforgeeks.org/java-implementation-of-diffie-hellman-algorithm-between-client-and-server/
 	private void generateKey(Message message) {
 		
-		myPublicKey = getRandomKeyInt();
+		// create my private key
+		myPrivateKey = getRandomKeyInt();
+		System.out.println("server public key" + myPrivateKey);
 		
-		int G = 7919;
-		int P = 7907;
-		int theirPublicKey = Integer.parseInt(message.getPayload());
+		// get A from the client
+		double clientA = Double.parseDouble(message.getPayload());
+		System.out.println(clientA);
 		
-		long x = calculatePower(G, myPublicKey, P);
-		long y = calculatePower(G, theirPublicKey, P);
+		// sent B back to the client
+		double B = ((Math.pow(G, myPrivateKey)) % P);
+		System.out.println("B" + B);
+
+		message.setPayload("" + B);
 		
-		long sk = calculatePower(theirPublicKey, myPublicKey, P);
-		System.out.println(sk);
-		
-		// reply to the client with public key
-		message.setPayload("" + myPublicKey);
 		try {
 			oOutputS.writeObject(message);
 		} catch (IOException e) {
@@ -132,6 +135,10 @@ public class ServerThread extends Thread {
 			e.printStackTrace();
 		}
 		
+		
+		// calculate the shared key
+		sharedKey = ((Math.pow(clientA, myPrivateKey)) % P); 
+		System.out.println("shared key" + sharedKey);
 	}
 	
 	// create calculatePower() method to find the value of x ^ y mod P  
@@ -363,7 +370,7 @@ public class ServerThread extends Thread {
 	}
 	
 	private int getRandomKeyInt() {
-		return (int) Math.floor(Math.random()*100000 +1);
+		return (int) Math.floor(Math.random()*100 +1);
 	}
 
 }

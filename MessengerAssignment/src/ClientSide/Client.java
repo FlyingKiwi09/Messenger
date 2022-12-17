@@ -39,8 +39,12 @@ public class Client extends Thread {
 	private ClientData user;
 	private TextArea ta;
 	private ClientGUI clientGUI;
-	private int myPublicKey; 
-	private int privateKey;
+	
+	// keys
+	private int myPrivateKey; 
+	private Double sharedKey;
+	int G = 3;
+	int P = 17;
 	
 	
 //	constructor throws an error if a connection can't be made
@@ -72,12 +76,19 @@ public class Client extends Thread {
 		processMessage(connectionReply);
 
 //		generate keys
-		myPublicKey = getRandomKeyInt();
+		// create my private key
+		myPrivateKey = getRandomKeyInt();
+		System.out.println("client public key" + myPrivateKey);
+		
+		// calculate A and send to the server
+		double  A = ((Math.pow(G, myPrivateKey)) % P); 
+		System.out.println("A " + A);
 		
 		Timestamp timestamp2 = new Timestamp(System.currentTimeMillis());
-		Message generateKeys = new Message(MessageCode.KEYS, "annon", "server", ("" + myPublicKey), timestamp2);
+		Message generateKeys = new Message(MessageCode.KEYS, "annon", "server", ""+ A , timestamp2);
 		oOutputS.writeObject(generateKeys);
 		
+		// read the reply (with B from the server)
 		Message keyReply = (Message) oInputS.readObject();
 		processMessage(keyReply);
 
@@ -150,31 +161,34 @@ public class Client extends Thread {
 	}
 	
 	//https://www.javatpoint.com/diffie-hellman-algorithm-in-java
+	//https://www.geeksforgeeks.org/java-implementation-of-diffie-hellman-algorithm-between-client-and-server/
 	private void generateKey(Message message) {
-		int G = 7919;
-		int P = 7907;
-		int theirPublicKey = Integer.parseInt(message.getPayload());
+	
+		System.out.println(message.getPayload());
+		// get B from the server
+		double serverB = Double.parseDouble(message.getPayload());
+		System.out.println(serverB);
 		
-		long x = calculatePower(G, myPublicKey, P);
-		long y = calculatePower(G, theirPublicKey, P);
+		// calculate 
+		sharedKey = ((Math.pow(serverB, myPrivateKey)) % P);
+
+		System.out.println("shared key" + sharedKey);
 		
-		long sk = calculatePower(theirPublicKey, myPublicKey, P);
-		System.out.println(sk);
 		
 	}
 	
 	// create calculatePower() method to find the value of x ^ y mod P  
-    private static long calculatePower(long x, long y, long P)  
-    {  
-        long result = 0;          
-        if (y == 1){  
-            return x;  
-        }  
-        else{  
-            result = ((long)Math.pow(x, y)) % P;  
-            return result;  
-        }  
-    } 
+//    private static long calculatePower(long x, long y, long P)  
+//    {  
+//        long result = 0;          
+//        if (y == 1){  
+//            return x;  
+//        }  
+//        else{  
+//            result = ((long)Math.pow(x, y)) % P;  
+//            return result;  
+//        }  
+//    } 
 
 //	login sends the username and password to the server for verification 
 //	if the credentials are verified, the server sends back a Client object with the users details.
@@ -186,7 +200,7 @@ public class Client extends Thread {
 		Message loginMessage = new Message(MessageCode.LOGIN, username, "server", password, timestamp);
 		
 		String plainText = username;
-	    String secret = ("" + privateKey);
+	    String secret = ("" + sharedKey);
 	    String salt = "12345678";
 	    IvParameterSpec ivParameterSpec = EncryptionManager.generateIv();
 	    SecretKey key;
@@ -321,7 +335,7 @@ public class Client extends Thread {
 	}
 	
 	private int getRandomKeyInt() {
-		return (int) Math.floor(Math.random()*100000 +1);
+		return (int) Math.floor(Math.random()*100 +1);
 	}
 	
 }
