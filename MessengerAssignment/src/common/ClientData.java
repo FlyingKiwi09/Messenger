@@ -52,7 +52,7 @@ public class ClientData implements Serializable {
 
 	@Override
 	public String toString() {
-		return "Client [firstName=" + firstName + ", lastName=" + lastName + ", ipAddress=" + ipAddress + "]";
+		return "Client [userName=" + userName + " firstName=" + firstName + ", lastName=" + lastName + ", ipAddress=" + ipAddress + "]";
 	}
 
 	

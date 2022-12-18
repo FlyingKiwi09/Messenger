@@ -3,6 +3,7 @@ package common;
 public enum MessageCode {
 	LOGIN,
 	LOGOUT,
+	REGISTER,
 	CONFIRM_CONNECTION,
 	FORWARD_MESSAGE,
 	MESSAGE,

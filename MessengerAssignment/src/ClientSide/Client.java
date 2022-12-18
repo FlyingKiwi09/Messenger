@@ -248,6 +248,63 @@ public class Client extends Thread {
 		return null;
 		
 	}
+	
+	public ClientData register(ClientData tempUser) {
+		System.out.println("calling register in client");
+		
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message registerMessage = new Message(MessageCode.REGISTER, tempUser.getUserName(), "server", "", timestamp);
+		
+		
+//		String plainText = username;
+//	    String secret = ("" + sharedKey);
+//	    String salt = "12345678";
+//	    IvParameterSpec ivParameterSpec = EncryptionManager.generateIv();
+//	    SecretKey key;
+//		try {
+//			key = EncryptionManager.getKeyFromPassword(secret,salt);
+//			String cipherText = EncryptionManager.encrypt(plainText, key, ivParameterSpec);
+//		    String decryptedCipherText = EncryptionManager.decrypt(
+//		      cipherText, key, ivParameterSpec);
+//		    
+//		    System.out.println(cipherText);
+//		    System.out.println(decryptedCipherText);
+//		} catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException | 
+//				NoSuchPaddingException | InvalidAlgorithmParameterException | BadPaddingException | 
+//				IllegalBlockSizeException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+	    
+		
+		try {
+			// lets the server know that we are trying to register a new client and to expect the client object
+			oOutputS.writeObject(registerMessage);
+			
+			// send the client object to be registered
+			oOutputS.writeObject(tempUser);
+			System.out.println("client sent to server " + tempUser.toString());
+			
+			// get reply
+			user = (ClientData) oInputS.readObject();
+			System.out.println("Server returned client " + user.toString());
+			
+			if (user != null) {
+				return user;
+			} else {
+				System.out.println("unsuccessful registration");
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
 
 	public void send(String destination, String messageText) {
 		System.out.println("calling send message in client");

@@ -28,6 +28,7 @@ public class ClientGUI extends Application {
 	static TextField messagesTF;
 	 
 	final private static Text feedback = new Text();
+	boolean loginMode = true;
 	
 	private ClientData user;
 	private ServicedClient servicedClient;
@@ -59,7 +60,13 @@ public class ClientGUI extends Application {
 		
 		Button connectButton = new Button("Connect");		
 		
+		HBox buttonHB = new HBox();
 		
+		Button loginButton = new Button("login");
+		loginButton.setDisable(true);
+		
+		Button registerButton = new Button("registrer");
+		registerButton.setDisable(true);
 		HBox usernameHB = new HBox();
 		Label usernameLabel = new Label("Username: ");
 		TextField usernameTF = new TextField();
@@ -68,14 +75,28 @@ public class ClientGUI extends Application {
 		Label passwordLabel = new Label("Password: ");
 		TextField passwordTF = new TextField();
 		
-		Button loginButton = new Button("login");
-		loginButton.setDisable(true);
+		HBox firstNameHB = new HBox();
+		Label firstNameLabel = new Label("First Name: ");
+		TextField firstNameTF = new TextField();
+		firstNameHB.setVisible(false);
+		
+		HBox lastNameHB = new HBox();
+		Label lastNameLabel = new Label("Last Name: ");
+		TextField lastNameTF = new TextField();
+		lastNameHB.setVisible(false);
+		
+		Button loginSubmitButton = new Button("Login");
+		loginSubmitButton.setDisable(true);
+		
 		
 //		combine inputs and labels into HBoxes
+		buttonHB.getChildren().addAll(loginButton, registerButton);
 		portNumberHB.getChildren().addAll(portNumberLabel, portNumberTF);
 		ipAddressHB.getChildren().addAll(ipAddressLable, ipAddressTF);
 		usernameHB.getChildren().addAll(usernameLabel, usernameTF);
 		passwordHB.getChildren().addAll(passwordLabel, passwordTF);
+		firstNameHB.getChildren().addAll(firstNameLabel, firstNameTF);
+		lastNameHB.getChildren().addAll(lastNameLabel, lastNameTF);
 		
 //		listeners for buttons
 		connectButton.setOnAction(event -> {
@@ -87,35 +108,81 @@ public class ClientGUI extends Application {
 					System.out.println("Creating servicedClient");
 				    servicedClient = new ServicedClient(this, contacts, clientSocket,user);
 				    servicedClient.start();
-					loginButton.setDisable(false);
+					registerButton.setDisable(false);
+					loginSubmitButton.setDisable(false);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 		});
 		
-		loginButton.setOnAction(event ->{
-			System.out.println("login button pressed");
+	  
+		
+		loginButton.setOnAction(event -> {
+			// switch from register mode to login mode
+			loginButton.setDisable(true);
+			registerButton.setDisable(false);
+			firstNameHB.setVisible(false);
+			lastNameHB.setVisible(false);
+			loginMode = true;
+			loginSubmitButton.setText("Login");
+		});
+		
+		registerButton.setOnAction(event -> {
+			// switch from login mode to register mode
+			loginButton.setDisable(false);
+			registerButton.setDisable(true);
+			firstNameHB.setVisible(true);
+			lastNameHB.setVisible(true);
+			loginMode = false;
+			loginSubmitButton.setText("Register");
+		});
+		
+		loginSubmitButton.setOnAction(event ->{
+			
+			if (loginMode == true) {
+				System.out.println("login button pressed");
 
-//			logging in
-			user = servicedClient.login(usernameTF.getText(), passwordTF.getText());
-			
-			
-			
-			if (user != null) {
-//				show logged in screen
-				feedback.setText("Success");
-				showMessagesScreen(user);
-				servicedClient.startClient();
+//				logging in
+				user = servicedClient.login(usernameTF.getText(), passwordTF.getText());
+				
+				
+				
+				if (user != null) {
+//					show logged in screen
+					feedback.setText("Success");
+					showMessagesScreen(user);
+					servicedClient.startClient();
+				} else {
+//					display failed login message
+					feedback.setText("Error: username or password are incorrect.");
+				}
 			} else {
-//				display failed login message
-				feedback.setText("Error: username or password are incorrect.");
+				System.out.println("Register Button Pressed");
+				
+				if (usernameTF.getText() != "" &&  firstNameTF.getText() != "" 
+						&& lastNameTF.getText() != "" && passwordTF.getText() != "") {
+					ClientData tempUser = new ClientData(usernameTF.getText(), firstNameTF.getText(), lastNameTF.getText(), passwordTF.getText());
+					System.out.println("Temp user to send is " + tempUser.toString());
+					
+					user = servicedClient.register(tempUser);
+					
+					if (user != null) {
+						showMessagesScreen(user);
+						servicedClient.startClient();
+						
+					} else {
+						feedback.setText("Error: could not create user" + usernameTF.getText() + ".\nPlease try again.");
+					}
+				} else {
+					feedback.setText("Ensure all fields are filled in and try again.");
+				}
 			}
-			
 		});
 		
 		
-		loginRoot.getChildren().addAll(portNumberHB, ipAddressHB, connectButton, usernameHB,  passwordHB, loginButton);
+		
+		loginRoot.getChildren().addAll(portNumberHB, ipAddressHB, connectButton, buttonHB, usernameHB,  passwordHB, firstNameHB, lastNameHB, loginSubmitButton, feedback);
 
 		// scene set up
 		primaryStage.setScene(new Scene(loginRoot, 300, 400));

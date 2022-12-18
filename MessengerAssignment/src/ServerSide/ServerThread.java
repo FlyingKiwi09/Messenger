@@ -93,6 +93,8 @@ public class ServerThread extends Thread {
 			sendOldMessages(message);
 		}else if (message.getCode() == MessageCode.KEYS) {
 			generateKey(message);
+		}else if (message.getCode() == MessageCode.REGISTER) {
+			attemptRegistration(message);
 		}else {
 			System.out.println("Did not recogise code: " + message.getCode());
 		}
@@ -193,6 +195,38 @@ public class ServerThread extends Thread {
 			// the server also tells other clients that this user is online at this point
 			this.server.addClientSocket(this, client);
 		}
+	}
+	
+	private void attemptRegistration(Message message) {
+		System.out.println("Attempting registration");
+
+		try {
+			// get the client to register
+			ClientData tempUser = (ClientData) oInputS.readObject();
+			System.out.println("Received client " + tempUser.toString());
+			
+			// attempt to register the client with the databaseHandler
+			ClientData returnedClient = server.getDatabaseHandler().attemptRegistration(tempUser);
+			
+			if (returnedClient !=null) {
+				System.out.println("Returned client " + returnedClient.toString());	
+				client.setUserName(returnedClient.getUserName());
+				client.setFirstName(returnedClient.getFirstName());
+				client.setLastName(returnedClient.getLastName());
+				oOutputS.writeObject(client);
+				
+			} else {
+				oOutputS.writeObject(returnedClient);
+			}
+			
+		} catch (ClassNotFoundException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// tell the server to add this client to it's hash map
+					// the server also tells other clients that this user is online at this point
+		this.server.addClientSocket(this, client);
 	}
 	
 	private void getContacts(Message message) {

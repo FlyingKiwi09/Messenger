@@ -51,7 +51,11 @@ public class ServicedClient extends Service<String> {
 	public ClientData login(String username, String password) {
 		System.out.println("calling login in serviced client");
 		return client.login (username, password);
-//		client.start();
+	}
+	
+	public ClientData register(ClientData tempUser) {
+		System.out.println("calling register in serviced client");
+		return client.register(tempUser);
 	}
 	
 	public void send(String destination, String message) {

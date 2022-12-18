@@ -51,6 +51,48 @@ public class DatabaseHandler {
 		return null;
 	}
 	
+	public ClientData attemptRegistration(ClientData tempUser) {
+		try {
+			// query the database for a user with the username
+	        String statement = "SELECT * FROM users WHERE users.username = ?";
+			PreparedStatement pst = connection.prepareStatement(statement);
+			
+			pst.setString(1, tempUser.getUserName());
+	
+			ResultSet rs =	pst.executeQuery();
+			
+			// if the username already exists... return null i.e couldn't create a new user
+			if (rs.next()) {	
+				return null;
+			} else { //  create, store and return the new user
+				String insertStatement = "INSERT INTO `users` (username, firstname, lastname, password) VALUES (?, ?, ?, ?)";
+				PreparedStatement pstInsert = connection.prepareStatement(insertStatement);
+				
+				// note the to and from usernames appear backwards because the message is the reply that confirms the message was recieved and not the original message that was sent.
+				pstInsert.setString(1, tempUser.getUserName());
+				pstInsert.setString(2, tempUser.getFirstName());
+				pstInsert.setString(3, tempUser.getLastName());
+				pstInsert.setString(4, tempUser.getIpAddress());
+				
+				int i = pstInsert.executeUpdate();
+				
+				if (i > 0) {
+					System.out.println("inserted " + i + "row");
+				} else {
+					System.out.println("row not inserted");
+				}
+				
+				return tempUser;
+			}
+		
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
 	public void saveMessage(Message message) {
 		
 		try {
