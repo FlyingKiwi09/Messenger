@@ -91,16 +91,17 @@ public class Server extends Thread{
 	public void logoutClient(ClientData user) {
 		// remove client from the hashmap
 		clientSockets.remove(user);
+		ipAddressList.remove(user);
 		
 //		let all the other clients know that a client has left
 		clientSockets.forEach((key, value) -> {
 			try {
 				//create a remove_contact message where the contact to remove is the payload
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-				Message addContact = new Message(MessageCode.REMOVE_CONTACT, "server", key.getUserName(), user.getUserName(), timestamp);
+				Message removeContact = new Message(MessageCode.REMOVE_CONTACT, "server", key.getUserName(), user.getUserName(), timestamp);
 				
 				// sent the message to the each user using their object output stream
-				value.getoOutputS().writeObject(addContact);
+				value.getoOutputS().writeObject(removeContact);
 				
 				
 			} catch (IOException e) {

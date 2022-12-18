@@ -68,6 +68,10 @@ public class ServicedClient extends Service<String> {
 		client.updateMessages(contactUsername, messagesTA);
 	}
 	
+	public void logout() {
+		client.logout();
+	}
+	
 	public void getContacts() {
 		client.getContacts();
 	}

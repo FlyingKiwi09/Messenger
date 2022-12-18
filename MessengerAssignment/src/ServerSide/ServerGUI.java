@@ -123,7 +123,7 @@ public class ServerGUI extends Application {
 	        });
 	        
 // create scene and set up primaryStage	        
-	        Scene scene = new Scene(root, 200, 100);
+	        Scene scene = new Scene(root, 400, 400);
 			primaryStage.setTitle("Server GUI");
 	        primaryStage.setScene(scene);
 	        primaryStage.show();

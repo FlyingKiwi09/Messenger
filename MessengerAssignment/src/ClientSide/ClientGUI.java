@@ -21,20 +21,15 @@ import javafx.stage.Stage;
 
 public class ClientGUI extends Application {
 	
-	private String serverAddress = "localhost";
-	private int port = 6677;
+
 	private static Socket clientSocket;
 	private static ObservableList<String> contacts = FXCollections.observableArrayList();
 	static TextField messagesTF;
-	 
 	final private static Text feedback = new Text();
 	boolean loginMode = true;
-	
 	private ClientData user;
 	private ServicedClient servicedClient;
-	VBox rootLogin;
-	VBox messagesVBox;
-	VBox loginVBox;
+
 //	UI elements
 	private Stage primaryStage;
 
@@ -52,11 +47,11 @@ public class ClientGUI extends Application {
 		
 		HBox portNumberHB = new HBox();
 		Label portNumberLabel = new Label("Port Number: ");
-		TextField portNumberTF = new TextField();
+		TextField portNumberTF = new TextField("6677");
 		
 		HBox ipAddressHB = new HBox();
-		Label ipAddressLable = new Label("Port Number: ");
-		TextField ipAddressTF = new TextField();
+		Label ipAddressLable = new Label("Server Address: ");
+		TextField ipAddressTF = new TextField("localhost");
 		
 		Button connectButton = new Button("Connect");		
 		
@@ -102,7 +97,7 @@ public class ClientGUI extends Application {
 		connectButton.setOnAction(event -> {
 				// connecting to server
 				try {
-					connectToServer();
+					connectToServer(ipAddressTF.getText(), Integer.parseInt(portNumberTF.getText()));
 //					create serviced client so separate thread can be made with java fx
 //					this thread holds the connection with the server
 					System.out.println("Creating servicedClient");
@@ -191,12 +186,12 @@ public class ClientGUI extends Application {
 		primaryStage.show();
 	}
 	
-	private void connectToServer() throws UnknownHostException, IOException {
+	private void connectToServer(String address, int portNumber) throws UnknownHostException, IOException {
 		
 //		connect to the server
 		System.out.println("Client says: trying to connect to server...");
 		
-		clientSocket = new Socket(serverAddress, port);
+		clientSocket = new Socket(address, portNumber);
 		System.out.println("connected");
 		
 //		
@@ -257,16 +252,14 @@ public class ClientGUI extends Application {
 		
 		logoutButton.setOnAction(event ->{
 			// tell the server you're logging out so that it can remove the user from the list of logged in users.
-//			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-//			Message logoutMessage = new Message(MessageCode.LOGOUT, user.getUserName(), "server", "", timestamp);
-//			try {
-//				oOutputS.writeObject(logoutMessage);
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//			
-//			showLoginScreen();
+			
+			servicedClient.logout();
+			try {
+				start(primaryStage);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 		});
 

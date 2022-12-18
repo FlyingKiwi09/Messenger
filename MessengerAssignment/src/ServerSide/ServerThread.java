@@ -9,6 +9,10 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -18,7 +22,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Set;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+
 import common.ClientData;
+import common.EncryptionManager;
 import common.Message;
 import common.MessageCode;
 import javafx.collections.ObservableList;
@@ -35,6 +46,11 @@ public class ServerThread extends Thread {
 	private double sharedKey;
 	int G = 3;
 	int P = 17;
+	
+	private String secret;
+	 private String salt = "12345678";
+	 private IvParameterSpec ivParameterSpec = EncryptionManager.generateIv();
+	 private SecretKey key;
 	
 //	readers and writers
 	private ObjectInputStream oInputS;
@@ -70,6 +86,7 @@ public class ServerThread extends Thread {
 		} catch(IOException e) {
 			System.out.println("Error: ");
 			e.printStackTrace();
+			server.logoutClient(client);
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -141,60 +158,73 @@ public class ServerThread extends Thread {
 		// calculate the shared key
 		sharedKey = ((Math.pow(clientA, myPrivateKey)) % P); 
 		System.out.println("shared key" + sharedKey);
+		
+//		NOTE!!!!!! IMPORTANT!!!
+//  	Couldn't Diffie-Hellman keyshare to work systematically so have hard coded a key here to progress with encryption/decryption.
+		sharedKey = (double) 123456789;
+		secret = ("" + sharedKey);
+		try {
+			key = (SecretKey) oInputS.readObject();
+			System.out.println("The key is: " + key.toString());
+	
+		} catch (ClassNotFoundException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	// create calculatePower() method to find the value of x ^ y mod P  
-    private static long calculatePower(long x, long y, long P)  
-    {  
-        long result = 0;          
-        if (y == 1){  
-            return x;  
-        }  
-        else{  
-            result = ((long)Math.pow(x, y)) % P;  
-            return result;  
-        }  
-    } 
 	
 	private void validateLogin(Message message) {
 		System.out.println("logging in...");
-		String username = message.getFromUsername();
-		String password = message.getPayload();
 		
 		
+			// decypt username and password
+			System.out.println(key.toString());
+//			String username = EncryptionManager.decrypt(message.getFromUsername(), key, ivParameterSpec);
+//			String password = EncryptionManager.decrypt(message.getPayload(), key, ivParameterSpec);
 		
-		System.out.println("Calling validateLogin on the databasehandler\nusername: " + username);
-		System.out.println("password: " + password);
 		
-//		databasehandler queries the database and returns a client, returns null if a match isn't found
-		ClientData returnedClient = server.getDatabaseHandler().validateLogin(username, password);
+			System.out.println("Calling validateLogin on the databasehandler\nusername: " + message.getFromUsername());
+			System.out.println("password: " + message.getPayload());
 			
-		// prepare a reply to the client
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		Message reply = new Message(MessageCode.LOGIN, "Server", "", "", timestamp);
-		
-		if (client != null) {
-			// reply that the login is successful 
-			reply.setPayload("loginSuccess");
-			
-			try {
-				oOutputS.writeObject(reply);
-
-				// send the ClientData as an object
-				client.setUserName(returnedClient.getUserName());
-				client.setFirstName(returnedClient.getFirstName());
-				client.setLastName(returnedClient.getLastName());
-				oOutputS.writeObject(client);
+//			databasehandler queries the database and returns a client, returns null if a match isn't found
+			ClientData returnedClient = server.getDatabaseHandler().validateLogin(message.getFromUsername(), message.getPayload());
 				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			// prepare a reply to the client
+			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+			Message reply = new Message(MessageCode.LOGIN, "Server", "", "", timestamp);
+			
+			if (returnedClient != null) {
+				// reply that the login is successful 
+				reply.setPayload("loginSuccess");
+				
+				try {
+					oOutputS.writeObject(reply);
+
+					// send the ClientData as an object
+					client.setUserName(returnedClient.getUserName());
+					client.setFirstName(returnedClient.getFirstName());
+					client.setLastName(returnedClient.getLastName());
+					oOutputS.writeObject(client);
+					
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				// tell the server to add this client to it's hash map
+				// the server also tells other clients that this user is online at this point
+				this.server.addClientSocket(this, client);
+			} else {
+				reply.setPayload("loginUnsuccessful");
+				try {
+					oOutputS.writeObject(reply);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 
-			// tell the server to add this client to it's hash map
-			// the server also tells other clients that this user is online at this point
-			this.server.addClientSocket(this, client);
-		}
 	}
 	
 	private void attemptRegistration(Message message) {

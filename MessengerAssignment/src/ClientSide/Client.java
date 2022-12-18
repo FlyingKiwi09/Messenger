@@ -46,6 +46,11 @@ public class Client extends Thread {
 	int G = 3;
 	int P = 17;
 	
+	 private String secret = ("" + sharedKey);
+	 private String salt = "12345678";
+	 private IvParameterSpec ivParameterSpec = EncryptionManager.generateIv();
+	 private SecretKey key;
+	
 	
 //	constructor throws an error if a connection can't be made
 	public Client(ClientGUI gui, ObservableList<String> contacts, Socket clientSocket,ClientData user) throws IOException, ClassNotFoundException {
@@ -157,7 +162,7 @@ public class Client extends Thread {
 			processOldMessages(message);
 		} else if (message.getCode() == MessageCode.KEYS) {
 			generateKey(message);
-		}
+		} 
 	}
 	
 	//https://www.javatpoint.com/diffie-hellman-algorithm-in-java
@@ -174,21 +179,21 @@ public class Client extends Thread {
 
 		System.out.println("shared key" + sharedKey);
 		
+//		NOTE!!!!!! IMPORTANT!!!
+//  	Couldn't Diffie-Hellman keyshare to work systematically so have hard coded a key here to progress with encryption/decryption.
+		sharedKey = (double) 123456789;
+		secret = ("" + sharedKey);
+		try {
+			key = EncryptionManager.getKeyFromPassword(secret,salt);
+			oOutputS.writeObject(key);
+
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	
-	// create calculatePower() method to find the value of x ^ y mod P  
-//    private static long calculatePower(long x, long y, long P)  
-//    {  
-//        long result = 0;          
-//        if (y == 1){  
-//            return x;  
-//        }  
-//        else{  
-//            result = ((long)Math.pow(x, y)) % P;  
-//            return result;  
-//        }  
-//    } 
 
 //	login sends the username and password to the server for verification 
 //	if the credentials are verified, the server sends back a Client object with the users details.
@@ -199,27 +204,29 @@ public class Client extends Thread {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		Message loginMessage = new Message(MessageCode.LOGIN, username, "server", password, timestamp);
 		
-		String plainText = username;
-	    String secret = ("" + sharedKey);
-	    String salt = "12345678";
-	    IvParameterSpec ivParameterSpec = EncryptionManager.generateIv();
-	    SecretKey key;
+//	   encode the username and password before sending to the server
 		try {
-			key = EncryptionManager.getKeyFromPassword(secret,salt);
-			String cipherText = EncryptionManager.encrypt(plainText, key, ivParameterSpec);
-		    String decryptedCipherText = EncryptionManager.decrypt(
-		      cipherText, key, ivParameterSpec);
+			
+			String cipherUsername = EncryptionManager.encrypt(username, key, ivParameterSpec);
+			String cipherPassword = EncryptionManager.encrypt(password, key, ivParameterSpec);
+		    System.out.println(key.toString());
+		    System.out.println(cipherUsername + " " + cipherPassword);
 		    
-		    System.out.println(cipherText);
-		    System.out.println(decryptedCipherText);
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException | 
+		    username = EncryptionManager.decrypt(cipherUsername, key, ivParameterSpec);
+		    
+		    System.out.println(username);
+
+//		    loginMessage.setFromUsername(cipherUsername);
+//		    loginMessage.setFromUsername(cipherPassword);
+		    
+		} catch (NoSuchAlgorithmException | InvalidKeyException | 
 				NoSuchPaddingException | InvalidAlgorithmParameterException | BadPaddingException | 
 				IllegalBlockSizeException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	    
-		
+// send the login request to the server	
 		try {
 			oOutputS.writeObject(loginMessage);
 			
@@ -389,6 +396,19 @@ public class Client extends Thread {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+	}
+	
+	public void logout() {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		Message logoutMessage = new Message(MessageCode.LOGOUT, user.getUserName(), "server", "", timestamp);
+		try {
+			oOutputS.writeObject(logoutMessage);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+//		showLoginScreen();
 	}
 	
 	private int getRandomKeyInt() {
